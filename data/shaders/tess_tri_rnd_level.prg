@@ -69,11 +69,11 @@ void main()
 		gl_TessLevelOuter[2] = max( Input[0].fLevel, Input[1].fLevel );
 	}
 	
-	gl_out[I]			 = gl_in[I].gl_Position;
-	Output[I].vNormal	 = Input[I].vNormal;
-	Output[I].vTexcoord0 = Input[I].vTexcoord0;
-	Output[I].Texcoord1	 = Input[I].vTexcoord1;
-	Output[I].fLevel	 = Input[I].fLevel;
+	gl_out[I].gl_Position	= gl_in[I].gl_Position;
+	Output[I].vNormal		= Input[I].vNormal;
+	Output[I].vTexcoord0	= Input[I].vTexcoord0;
+	Output[I].vTexcoord1	= Input[I].vTexcoord1;
+	Output[I].fLevel		= Input[I].fLevel;
 }
 
 

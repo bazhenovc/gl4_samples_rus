@@ -62,10 +62,10 @@ void main()
 		gl_TessLevelOuter[3] = unTessLevelOutter;
 	}
 	
-	gl_out[I]			 = gl_in[I].gl_Position;
-	Output.vNormal[I]	 = Input[I].vNormal;
-	Output.vTexcoord0[I] = Input[I].vTexcoord0;
-	Output.Texcoord1[I]	 = Input[I].vTexcoord1;
+	gl_out[I].gl_Position	= gl_in[I].gl_Position;
+	Output[I].vNormal		= Input[I].vNormal;
+	Output[I].vTexcoord0	= Input[I].vTexcoord0;
+	Output[I].vTexcoord1	= Input[I].vTexcoord1;
 }
 
 
