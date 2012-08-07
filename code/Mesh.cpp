@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "Vertex.h"
 #include <malloc.h>
+#include <stdint.h>
 
 #define logPrint printf
 

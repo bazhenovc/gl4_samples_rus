@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\..\..\contrib\libdds\code\dds_types.h" />
+    <ClInclude Include="..\..\..\contrib\libdds\code\libdds.h" />
+    <ClInclude Include="..\..\..\contrib\libdds\code\libdds_opengl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\contrib\libdds\code\libdds.c" />
+    <ClCompile Include="..\..\..\contrib\libdds\code\libdds_opengl.c" />
+  </ItemGroup>
+</Project>

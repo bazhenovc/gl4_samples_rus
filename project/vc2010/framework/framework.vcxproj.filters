@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="mathlib">
+      <UniqueIdentifier>{f7dc64b4-d8f6-45f4-a38f-96b04609275a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\code\mathlib\AABox.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Frustum.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Math.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Matrix3.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Matrix4.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Quaternion.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Vector2.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Vector3.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\mathlib\Vector4.hpp">
+      <Filter>mathlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\code\Framebuffer.h" />
+    <ClInclude Include="..\..\..\code\HardwareBuffer.h" />
+    <ClInclude Include="..\..\..\code\Mesh.h" />
+    <ClInclude Include="..\..\..\code\Shader.h" />
+    <ClInclude Include="..\..\..\code\Vertex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
+    <ClCompile Include="..\..\..\code\HardwareBuffer.cpp" />
+    <ClCompile Include="..\..\..\code\Mesh.cpp" />
+    <ClCompile Include="..\..\..\code\Shader.cpp" />
+  </ItemGroup>
+</Project>
