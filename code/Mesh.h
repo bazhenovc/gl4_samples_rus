@@ -7,6 +7,7 @@
 
 namespace framework
 {
+
 class Mesh
 {
 public:

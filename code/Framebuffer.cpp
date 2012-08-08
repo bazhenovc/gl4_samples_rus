@@ -19,10 +19,15 @@ namespace framework
 {
 
 Framebuffer::Framebuffer()
-{}
+{
+	glGenFramebuffers(1, &_fbo);
+}
 
 Framebuffer::~Framebuffer()
-{}
+{
+	if (_fbo)
+		glDeleteFramebuffers(1, &_fbo);
+}
 
 void Framebuffer::bind()
 {
@@ -32,43 +37,6 @@ void Framebuffer::bind()
 void Framebuffer::unbind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void Framebuffer::create(int w, int h)
-{
-	// Create FBO
-	glGenFramebuffers(1, &_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
-
-	// Create depth renderbuffer
-	glGenRenderbuffers(1, &_depthRenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-	                          GL_DEPTH_ATTACHMENT,
-	                          GL_RENDERBUFFER,
-	                          _depthRenderbuffer);
-
-	// Create color texture
-	glGenTextures(1, &_colorAttachment);
-	glBindTexture(GL_TEXTURE_2D, _colorAttachment);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-	                       GL_TEXTURE_2D, _colorAttachment,
-	                       0);
-
-	if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
-		logPrint("Failed to create FBO :(");
-	}
-
-	glViewport(0, 0, w, h);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 }
 
 void Framebuffer::setRenderTargets(unsigned int flag)
@@ -96,5 +64,32 @@ void Framebuffer::setRenderTargets(unsigned int flag)
 #undef ADD_RT
 }
 
+Texture* Framebuffer::createTexture(GLuint type, unsigned int width, unsigned int height,
+									GLuint format,
+									GLuint internalFormat,
+									GLuint byteType)
+{
+	Texture* ret = new Texture(type);
+	ret->bind();
+	ret->copyData(NULL, width, height, format, internalFormat, byteType);
+	ret->unbind();
+	return ret;
+}
+
+void Framebuffer::attach(Texture *texture, GLuint attachment)
+{
+	glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
+}
+
+RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, unsigned int height)
+{
+	RenderBuffer* ret = new RenderBuffer(type, width, height);
+	return ret;
+}
+
+void Framebuffer::attach(RenderBuffer *buffer, GLuint attacment)
+{
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attacment, GL_RENDERBUFFER, buffer->getID());
+}
 
 }

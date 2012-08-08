@@ -4,6 +4,7 @@
 
 #include "Mesh.h"
 #include "Shader.h"
+#include "Texture.h"
 #include "mathlib/Matrix4.hpp"
 
 using namespace framework;
@@ -20,22 +21,29 @@ using namespace framework;
 // globals
 Mesh* mesh = 0;
 Shader* shader = 0;
+Texture* texture = 0;
 Matrix4 mvp;
 
 void init()
 {
 	mvp = Matrix4::perspective(60.0f, 800.0f / 600.0f, 0.00001f, 3000.0f);
 	mvp *= Matrix4::translate(0, 0, -10);
+
 	mesh = new Mesh;
 	mesh->fromFile( RESOURCE_PATH"media/torus.e2m" );
+
 	shader = new Shader;
 	shader->loadShaders(RESOURCE_PATH"media/shaders/basic.prg");
+
+	texture = new Texture(GL_TEXTURE_2D);
+	texture->loadDDS("media/textures/rockwall.dds");
 }
 
 void shutdown()
 {
 	delete mesh;
 	delete shader;
+	delete texture;
 }
 
 void display()
@@ -44,12 +52,17 @@ void display()
 
 	mvp *= Matrix4::rotate(1, 1, 1, 1);
 
+	texture->bind();
+
 	shader->bind();
 	shader->setUniformMatrix("mvp", mvp);
+	shader->setTexture("diffuse", 0);
 	{
 		mesh->draw();
 	}
 	shader->unbind();
+
+	texture->unbind();
 
 	glutSwapBuffers();
 }
@@ -82,6 +95,8 @@ int main(int argc, char** argv)
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+	glEnable(GL_DEPTH_TEST);
 
 	init();
 

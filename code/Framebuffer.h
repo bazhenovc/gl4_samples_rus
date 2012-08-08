@@ -13,6 +13,11 @@
 
 #include <GL/glew.h>
 
+#include "Texture.h"
+#include "RenderBuffer.h"
+
+#include <list>
+
 namespace framework
 {
 
@@ -46,11 +51,6 @@ public:
 	}
 
 	/**
-	 * Create FBO
-	*/
-	void create(int w, int h);
-
-	/**
 	 * Bind framebuffer
 	*/
 	void bind();
@@ -64,6 +64,29 @@ public:
 		Set render targets
 	*/
 	void setRenderTargets(unsigned int flag);
+
+	/**
+		Create texture for attaching.
+	*/
+	Texture* createTexture(GLuint type, unsigned int width, unsigned int height,
+						   GLuint format = GL_RGBA,
+						   GLuint internalFormat = GL_RGBA,
+						   GLuint byteType = GL_UNSIGNED_BYTE);
+
+	/**
+		Attach a texture as a render target
+	*/
+	void attach(Texture* texture, GLuint attachment);
+
+	/**
+		Create renderbuffer for attaching
+	*/
+	RenderBuffer* createRenderBuffer(GLuint type, unsigned int width, unsigned int height);
+
+	/**
+		Attach a renderbuffer as a render target
+	*/
+	void attach(RenderBuffer* buffer, GLuint attacment);
 
 private:
 	//! fbo ID

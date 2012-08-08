@@ -39,7 +39,7 @@ libdds.so: $(libdds_objs)
 
 libframework.so: libdds.so $(framework_objs)
 	@echo 'LD libframework.so'
-	gcc -o libframework.so -shared $(ldflags) $(ldlibs) -ldds $(framework_objs)
+	@gcc -o libframework.so -shared $(ldflags) $(ldlibs) -ldds $(framework_objs)
 
 samples: libframework.so $(samples_objs)
 
@@ -52,7 +52,7 @@ clean:
 -include $(framework_deps)
 -include $(libdds_deps)
 
-build/%.cpp.o: $(src_dir)/%.cpp Makefile
+build/%.cpp.o: $(src_dir)/%.cpp $(src_dir)/%.h Makefile
 	@echo 'CC $< -> $@'
 	@g++ $(cflags) -MD -MMD -MP -c $< -o $@
 
@@ -60,6 +60,6 @@ build/%.c.o: $(libdds_dir)/%.c Makefile
 	@echo 'CC $< -> $@'
 	@gcc $(cflags) -MD -MMD -MP -c $< -o $@
 
-%: $(samples_dir)/%.cpp Makefile
+%: $(samples_dir)/%.cpp $(samples_dir)/%.h Makefile
 	@echo 'CCLD $< -> $@'
 	@g++ $(cflags) $(ldflags) -lframework $< -o $@
