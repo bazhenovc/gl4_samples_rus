@@ -1,5 +1,6 @@
 /*
-	Пример шейдера с рандомным уровнем тесселяции патей.
+	Уровень тесселяции меняется в зависимости от расстояния до камеры.
+	Невидимые патчи отсекаются.
 */
 
 --vertex
@@ -8,18 +9,31 @@
 layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
 uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 12.0;
+uniform float	unMaxTessLevel	= 32.0;
+uniform float	unHeightScale	= 10.0;
+uniform float	unDetailLevel	= 1000.0;
+uniform float	unQuadSize		= 0.01;	// in screen space
+uniform mat4	unMVPMatrix;
 
 out	TVertData {
 	vec3	vNormal;
+	vec2	vScrCoords;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
 	float	fLevel;
+	bool	bInScreen;
 } Output;
 
 
-float Rand(in vec2 v) {
-    return fract( sin( dot( v, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+bool InScreen(in vec2 pos)
+{
+	const float		size = 1.2;
+	return ( abs(pos.x) <= size && abs(pos.y) <= size );
+}
+
+float Level(float dist)
+{
+	return clamp( unDetailLevel/dist - 2.0, 1.0, unMaxLevel );
 }
 
 void main()
@@ -28,8 +42,12 @@ void main()
 	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
-	Output.fLevel		= clamp( ( Rand( inPosition ) + 1.0 ) * unMaxTessLevel,
-								 1.0, unMaxTessLevel );
+	vec4	pos			= unMVPMatrix * vec4( gl_Position.xyz +
+						  texture( unHeightMap, Output.vTexcoord1 ).r *
+						  Output.vNormal * unHeightScale, 1.0 );
+	Output.vScrCoords	= pos.xy / pos.w;
+	Output.fLevel		= Level( length(pos) );
+	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 
 
@@ -40,13 +58,15 @@ void main()
 
 #define I	gl_InvocationID
 
-layout(vertices = 3) out;
+layout(vertices = 4) out;
 
 in	TVertData {
 	vec3	vNormal;
+	vec2	vScrCoords;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
 	float	fLevel;
+	bool	bInScreen;
 } Input[];
 
 out TContData {
@@ -57,14 +77,46 @@ out TContData {
 } Output[];
 
 
+#define Min4( _a, _b, _c, _d )	min( min( _a, _b ), min( _c, _d ) )
+#define Max4( _a, _b, _c, _d )	max( max( _a, _b ), max( _c, _d ) )
+
+vec4 Rect(in vec2 p0, in vec2 p1, in vec2 p2, in vec2 p3)
+{
+	return 	 vec4(	Min4( p0.x, p1.x, p2.x, p3.x ),
+					Min4( p0.y, p1.y, p2.y, p3.y ),
+					Max4( p0.x, p1.x, p2.x, p3.x ),
+					Max4( p0.y, p1.y, p2.y, p3.y ) );
+}
+
+bool QuadInScreen()
+{
+	const float		size = 1.2;
+	
+	vec4	screen	= vec4( -size, -size, size, size );
+	vec4	rect 	=  Rect( Input[0].vScrCoords, Input[1].vScrCoords,
+							 Input[2].vScrCoords, Input[3].vScrCoords );
+	return	( rect[0] < screen[2] && rect[2] > screen[0] &&
+			  rect[1] < screen[3] && rect[3] > screen[1] ) ||
+			( screen[2] < rect[0] && screen[0] > rect[2] &&
+			  screen[3] < rect[1] && screen[1] > rect[3] );
+}
+
 void main()
 {
 	if ( I == 0 )
 	{
-		gl_TessLevelInner[0] = max( max( Input[0].fLevel, Input[1].fLevel ), Input[2].fLevel );
-		gl_TessLevelOuter[0] = max( Input[1].fLevel, Input[2].fLevel );
-		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[2].fLevel );
-		gl_TessLevelOuter[2] = max( Input[0].fLevel, Input[1].fLevel );
+		bool	in_screen = any( bvec4( Input[0].bInScreen, Input[1].bInScreen,
+										Input[2].bInScreen, Input[3].bInScreen ) );
+		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel),
+								 max( Input[2].fLevel, Input[3].fLevel ) );
+		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 0.0;
+		
+		gl_TessLevelInner[0] = max_level * k;
+		gl_TessLevelInner[1] = max_level * k;
+		gl_TessLevelOuter[0] = max( Input[0].fLevel, Input[3].fLevel ) * k;
+		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[1].fLevel ) * k;
+		gl_TessLevelOuter[2] = max( Input[1].fLevel, Input[2].fLevel ) * k;
+		gl_TessLevelOuter[3] = max( Input[2].fLevel, Input[3].fLevel ) * k;
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
@@ -80,7 +132,7 @@ void main()
 --tesseval
 #version 410 core
 
-layout(triangles, equal_spacing, ccw) in;
+layout(quads, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
@@ -100,10 +152,11 @@ out	TEvalData {
 } Output;
 
 
-#define Interpolate( _a, _p ) \
-	(	gl_TessCoord.x * _a[0] _p + \
-		gl_TessCoord.y * _a[1] _p + \
-		gl_TessCoord.z * _a[2] _p )
+#define Interpolate( a, p ) \
+	( mix( \
+		mix( a[0] p, a[1] p, gl_TessCoord.x ), \
+		mix( a[3] p, a[2] p, gl_TessCoord.x ), \
+		gl_TessCoord.y ) )
 
 
 float PCF(in vec2 vTexcoord)
@@ -114,14 +167,13 @@ float PCF(in vec2 vTexcoord)
 	height += v0.x + v0.y + v0.z + v0.w;
 	height += v1.x + v1.y + v1.z + v1.w;
 	return height * 0.1;
-}
+}	
 	
 void main()
 {
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
 	Output.vNormal 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
-	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
 	
 	pos.xyz += PCF( texc ) * Output.vNormal * unHeightScale;
@@ -150,6 +202,8 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal;
+	//outNormal.rg	= textureQueryLod( unDiffuseMap, Input.vTexcoord0 );
+	//outNormal.b		= 0.0;	// empty
 	outNormal.a		= Input.fLevel;
 }
 

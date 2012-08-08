@@ -1,5 +1,5 @@
 /*
-	ѕример шейдера с рандомным уровнем тессел€ции патей.
+	”ровень тессел€ции мен€етс€ в зависимости от размера полигона на экране.
 */
 
 --vertex
@@ -8,28 +8,28 @@
 layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
 uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 12.0;
+uniform float	unMaxTessLevel	= 32.0;
+uniform float	unHeightScale	= 10.0;
+uniform float	unDetailLevel	= 1000.0;
+uniform mat4	unMVPMatrix;
+uniform vec2	unViewport		= vec2( 800.0, 600.0 );
 
 out	TVertData {
+	vec2	vScrCoords;	// position in screen
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
-	float	fLevel;
 } Output;
 
-
-float Rand(in vec2 v) {
-    return fract( sin( dot( v, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
-}
 
 void main()
 {
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
+	vec4	proj_pos	= unMVPMatrix * gl_Position;
+	Output.vScrCoords	= ( proj_pos.xy / proj_pos.w + 1.0 ) * 0.5 * unViewport;
 	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
-	Output.fLevel		= clamp( ( Rand( inPosition ) + 1.0 ) * unMaxTessLevel,
-								 1.0, unMaxTessLevel );
 }
 
 
@@ -42,36 +42,43 @@ void main()
 
 layout(vertices = 3) out;
 
+uniform float	unMaxTessLevel	= 32.0;
+uniform float	unDetailLevel	= 7e-5;	//unMaxTessLevel / unViewport.x * unViewport.y;
+
 in	TVertData {
+	vec2	vScrCoords;	// position in screen
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
-	float	fLevel;
 } Input[];
 
 out TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
-	float	fLevel;
 } Output[];
 
+
+float Level(in vec2 p0, in vec2 p1)
+{
+	return clamp( distance( p0, p1 ) * unDetailLevel, 1.0, unMaxTessLevel );
+}
 
 void main()
 {
 	if ( I == 0 )
 	{
-		gl_TessLevelInner[0] = max( max( Input[0].fLevel, Input[1].fLevel ), Input[2].fLevel );
-		gl_TessLevelOuter[0] = max( Input[1].fLevel, Input[2].fLevel );
-		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[2].fLevel );
-		gl_TessLevelOuter[2] = max( Input[0].fLevel, Input[1].fLevel );
+		gl_TessLevelOuter[0] = Level( Input[1].vScrCoords, Input[2].vScrCoords );
+		gl_TessLevelOuter[1] = Level( Input[0].vScrCoords, Input[2].vScrCoords );
+		gl_TessLevelOuter[2] = Level( Input[0].vScrCoords, Input[1].vScrCoords );
+		gl_TessLevelInner[0] = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1] ),
+										 gl_TessLevelOuter[2] );
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
 	Output[I].vNormal		= Input[I].vNormal;
 	Output[I].vTexcoord0	= Input[I].vTexcoord0;
 	Output[I].vTexcoord1	= Input[I].vTexcoord1;
-	Output[I].fLevel		= Input[I].fLevel;
 }
 
 
@@ -90,7 +97,6 @@ in TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
-	float	fLevel;
 } Input[];
 
 out	TEvalData {
@@ -121,8 +127,8 @@ void main()
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
 	Output.vNormal 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
-	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
+	Output.fLevel		= Interpolate( gl_TessLevelOuter, );
 	
 	pos.xyz += PCF( texc ) * Output.vNormal * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
