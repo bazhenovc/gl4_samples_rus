@@ -5,6 +5,7 @@
 #include "Vertex.h"
 #include <malloc.h>
 #include <stdint.h>
+#include <vector>
 
 #define logPrint printf
 
@@ -34,9 +35,9 @@ void Mesh::bind(void)
 
 void Mesh::unbind(void)
 {
+	glBindVertexArray(0);
 	getVertexBuffer()->unbind();
 	getIndexBuffer()->unbind();
-	glBindVertexArray(0);
 }
 
 bool Mesh::fromFile(const char* filename)
@@ -89,6 +90,19 @@ bool Mesh::fromFile(const char* filename)
 	vertexBuffer->bind();
 	vertexBuffer->copyData(vertices, vertexNumber, sizeof ( Vertex), BU_STREAM);
 	vertexBuffer->unbind();
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
+	                      (char*) 0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_TRUE, sizeof (Vertex),
+	                      (char*) 0 + 12);
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
+	                      (char*) 0 + 20);
+	glEnableVertexAttribArray(2);
+
 	unbind();
 
 	free(vertices);
@@ -175,11 +189,7 @@ void Mesh::makeQuad()
 	getIndexBuffer()->bind();
 	getIndexBuffer()->copyData(quadIndices, 6, sizeof(unsigned int), BU_STATIC);
 	getIndexBuffer()->unbind();
-	unbind();
-}
 
-void Mesh::draw()
-{
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
 	                      (char*) 0);
 	glEnableVertexAttribArray(0);
@@ -192,8 +202,77 @@ void Mesh::draw()
 	                      (char*) 0 + 20);
 	glEnableVertexAttribArray(2);
 
+	unbind();
+}
 
+void Mesh::draw()
+{
+	glBindVertexArray(vao);
 	glDrawElements(type, getIndexBuffer()->getSize(),
 	               GL_UNSIGNED_INT, 0);
 }
+
+
+void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchSize)
+{
+	std::vector<float>				vertices;
+	std::vector<unsigned int>		indices;
+	unsigned int					count = sideSize + 1;
+
+	vertices.reserve( count * count * 2 );
+	indices.reserve( sideSize * sideSize * 4 );
+
+	for (unsigned int h = 0; h < count; ++h)
+	{
+		for (unsigned int w = 0; w < count; ++w)
+		{
+			vertices.push_back( w * quadSize );
+			vertices.push_back( h * quadSize );
+
+			if ( w != 0 && h != 0 )
+			{
+				if ( patchSize == 4 )
+				{
+					indices.push_back( h*count		+ w );
+					indices.push_back( h*count		+ w-1 );
+					indices.push_back( (h-1)*count	+ w-1 );
+					indices.push_back( (h-1)*count	+ w );
+				}
+				else
+				if ( patchSize == 3 )
+				{
+					indices.push_back( h*count		+ w );
+					indices.push_back( h*count		+ w-1 );
+					indices.push_back( (h-1)*count	+ w-1 );
+
+					indices.push_back( (h-1)*count	+ w-1 );
+					indices.push_back( (h-1)*count	+ w );
+					indices.push_back( h*count		+ w );
+				}
+				else
+				if ( patchSize == 16 )
+				{
+					for (unsigned int i = 0; i < 4; ++i)
+						for (unsigned int j = 0; j < 4; ++j)
+							indices.push_back( (h+i-3)*count + w+j-3 );
+				}
+			}
+		}
+	}
+	
+	bind();
+	indexBuffer->bind();
+	indexBuffer->copyData( &indices[0], indices.size(), sizeof (indices[0]), GL_STATIC_DRAW );
+	indexBuffer->unbind();
+
+	vertexBuffer->bind();
+	vertexBuffer->copyData( &vertices[0], vertices.size(), sizeof (vertices[0]), GL_STATIC_DRAW );
+	vertexBuffer->unbind();
+	
+	glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, 0 );
+	glEnableVertexAttribArray(0);
+
+	unbind();
+}
+
 }

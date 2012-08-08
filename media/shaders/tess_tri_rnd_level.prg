@@ -40,7 +40,7 @@ void main()
 
 #define I	gl_InvocationID
 
-layout(vertices = 4) out;
+layout(vertices = 3) out;
 
 in	TVertData {
 	vec3	vNormal;
@@ -61,14 +61,12 @@ void main()
 {
 	if ( I == 0 )
 	{
-		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel ),
-								 max( Input[2].fLevel, Input[3].fLevel ) );
+		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel ), Input[2].fLevel );
 		gl_TessLevelInner[0] = max_level;
 		gl_TessLevelInner[1] = max_level;
-		gl_TessLevelOuter[0] = max( Input[0].fLevel, Input[3].fLevel );
-		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[1].fLevel );
-		gl_TessLevelOuter[2] = max( Input[1].fLevel, Input[2].fLevel );
-		gl_TessLevelOuter[3] = max( Input[2].fLevel, Input[3].fLevel );
+		gl_TessLevelOuter[0] = max( Input[1].fLevel, Input[2].fLevel );
+		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[2].fLevel );
+		gl_TessLevelOuter[2] = max( Input[0].fLevel, Input[1].fLevel );
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
@@ -84,7 +82,7 @@ void main()
 --tesseval
 #version 410 core
 
-layout(quads, equal_spacing, ccw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
@@ -105,23 +103,23 @@ out	TEvalData {
 
 
 #define Interpolate( _a, _p ) \
-	( mix(	mix( _a[0] _p, _a[1] _p, gl_TessCoord.x ), \
-			mix( _a[3] _p, _a[2] _p, gl_TessCoord.x ), \
-			gl_TessCoord.y ) )
+	(	gl_TessCoord.x * _a[0] _p + \
+		gl_TessCoord.y * _a[1] _p + \
+		gl_TessCoord.z * _a[2] _p )
 
 
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1, 0) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1, 1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0, 0) ).r * 2.0;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0, 1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1, 0) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return height * 0.1;
 }	
 	
@@ -162,4 +160,4 @@ void main()
 	outNormal.a		= Input.fLevel;
 }
 
-// [END]
+--eof

@@ -17,15 +17,6 @@ namespace framework
 class Shader
 {
 private:
-	/// Vertex shader id
-	GLuint _vert;
-
-	/// Fragment shader id
-	GLuint _frag;
-
-	/// Geometry shader id
-	GLuint _geom;
-
 	/// Linked program
 	GLuint _prog;
 
@@ -179,12 +170,17 @@ public:
 	/// @return Assignment result
 	bool setTexture(int loc, GLuint texUnit);
 
-	/** Load shaders from files
-	 * @par vrt Vertex shader file name
-	 * @par frg Fragment shader file name
-	 * @par geo Geometry shader file name
-	 * @return False on failure */
-	bool fromFile(const char* vrt, const char* frg, const char* geo);
+	// Attach shader from file
+	bool attachShaderFromFile(const char *fileName, GLenum shaderType);
+
+	// Attach shader source
+	bool attachShaderSrc(const char *src, GLenum shaderType);
+
+	// Link program
+	bool link();
+
+	// Load shaders from single file
+	bool loadShaders(const char *fileName);
 };
 }
 

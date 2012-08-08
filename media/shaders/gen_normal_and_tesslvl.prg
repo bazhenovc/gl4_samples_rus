@@ -2,7 +2,7 @@
 	√енерирует текстуру нормалей и уровней тессел€ции
 */
 
-// [VERTEX]
+--vertex
 #version 410 core
 
 layout(location = 0)	in vec2 inPosition;		// [0,1]
@@ -11,7 +11,7 @@ uniform mat4	unMVPMatrix;
 
 out vec2	vTexcoord;
 
-void main(void)
+void main()
 {
 	gl_Position = unMVPMatrix * vec4( inPosition, 0.0, 1.0 );
 	vTexcoord	= inPosition;
@@ -19,7 +19,7 @@ void main(void)
 
 
 //-----------------------------------------------------------------------------
-// [FRAGMENT]
+--fragment
 #version 410 core
 
 layout(location = 0) out vec4	outNormal;	// RGBA8
@@ -77,7 +77,7 @@ float GenTessLevel(in mat3 mHeight)
 	return clamp( delta / 12.0, 1.0/255.0, 1.0 );
 }
 
-void main(void)
+void main()
 {
 	mat3	height;
 	ReadHeight( height );
@@ -88,4 +88,4 @@ void main(void)
 	outNormal = vec4( normal, tesslvl );
 }
 
-// [END]
+--eof

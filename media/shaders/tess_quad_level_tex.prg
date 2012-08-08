@@ -1,5 +1,5 @@
 /*
-	Простой шейдер для displacement mapping'а с квадратными патчами.
+	Использует текстуру с предварительно расчитанным уровнем тесселяции и карту нормалей.
 */
 
 --vertex
@@ -7,21 +7,23 @@
 
 layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
-uniform float	unGridScale	= 100.0;
+uniform float		unGridScale		= 100.0;
+uniform float		unMaxTessLevel	= 32.0;
+uniform sampler2D	unNormalMap;
 
 out	TVertData {
-	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Output;
 
 
 void main()
 {
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
-	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
+	Output.fLevel		= texture( unNormalMap, Output.vTexcoord1 ).a * unMaxTessLevel;
 }
 
 
@@ -34,19 +36,17 @@ void main()
 
 layout(vertices = 4) out;
 
-uniform float	unTessLevelInner	= 32.0;
-uniform float	unTessLevelOutter	= 32.0;
 
 in	TVertData {
-	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Input[];
 
 out TContData {
-	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Output[];
 
 
@@ -54,18 +54,20 @@ void main()
 {
 	if ( I == 0 )
 	{
-		gl_TessLevelInner[0] = unTessLevelInner;
-		gl_TessLevelInner[1] = unTessLevelInner;
-		gl_TessLevelOuter[0] = unTessLevelOutter;
-		gl_TessLevelOuter[1] = unTessLevelOutter;
-		gl_TessLevelOuter[2] = unTessLevelOutter;
-		gl_TessLevelOuter[3] = unTessLevelOutter;
+		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel ),
+								 max( Input[2].fLevel, Input[3].fLevel ) );
+		gl_TessLevelInner[0] = max_level;
+		gl_TessLevelInner[1] = max_level;
+		gl_TessLevelOuter[0] = max( Input[0].fLevel, Input[3].fLevel );
+		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[1].fLevel );
+		gl_TessLevelOuter[2] = max( Input[1].fLevel, Input[2].fLevel );
+		gl_TessLevelOuter[3] = max( Input[2].fLevel, Input[3].fLevel );
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
-	Output[I].vNormal		= Input[I].vNormal;
 	Output[I].vTexcoord0	= Input[I].vTexcoord0;
-	Output[I].vTexcoord1	= Input[I].vTexcoord1;
+	Output[I].Texcoord1		= Input[I].vTexcoord1;
+	Output[I].fLevel		= Input[I].fLevel;
 }
 
 
@@ -78,17 +80,19 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
+uniform sampler2D	unNormalMap;	// normal (rgb), tess level (a)
 uniform float		unHeightScale	= 10.0;
 
 in TContData {
-	vec3	vNormal;
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Input[];
 
 out	TEvalData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
+	float	fLevel;
 } Output;
 
 
@@ -102,26 +106,27 @@ out	TEvalData {
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1, 0) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2(-1, 1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0, 0) ).r * 2.0;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 0, 1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1,-1) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1, 0) ).r;
-	height += textureOffset( unHeightMap, texcoord, ivec2( 1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return height * 0.1;
 }	
 	
 void main()
 {
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
-	Output.vNormal 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
+	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
+	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
 	
-	pos.xyz += PCF( texc ).r * Output.vNormal * unHeightScale;
+	pos.xyz += PCF( texc ) * vec3(0.0, 0.0, 1.0) * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
 }
 
@@ -138,15 +143,16 @@ uniform sampler2D	unDiffuseMap;
 in	TEvalData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
+	float	fLevel;
 } Input;
 
 
-void main()
+void main(void)
 {
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal;
-	outNormal.a		= 0.0;	// empty
+	outNormal.a		= fLevel;
 }
 
-// [END]
+--eof

@@ -3,8 +3,10 @@
 
 #include <stdio.h>
 #include <malloc.h>
+#include <string>
 
 #define logPrint printf
+#define COUNTOF( x )	(sizeof(x)/sizeof(x[0]))
 
 namespace
 {
@@ -36,24 +38,12 @@ namespace framework
 {
 
 Shader::Shader(void)
-	: _vert(0), _frag(0), _geom(0), _prog(0)
+	: _prog(0)
 { }
 
 Shader::~Shader()
 {
 	if (_prog) {
-		if (_vert) {
-			glDetachShader(_prog, _vert);
-			glDeleteShader(_vert);
-		}
-		if (_frag) {
-			glDetachShader(_prog, _frag);
-			glDeleteShader(_frag);
-		}
-		if (_geom) {
-			glDetachShader(_prog, _geom);
-			glDeleteShader(_geom);
-		}
 		glDeleteProgram(_prog);
 	}
 }
@@ -257,46 +247,43 @@ bool Shader::setTexture(int loc, GLuint texUnit)
 	glUniform1i(loc, texUnit);
 	return true;
 }
-
-bool Shader::fromFile(const char* vrt, const char* frg, const char* geo)
+	
+bool Shader::attachShaderFromFile(const char *fileName, GLenum shaderType)
 {
-	char* vsrc = filetobuf(vrt);
-	char* fsrc = filetobuf(frg);
-	char* gsrc = filetobuf(geo);
-	if (!vsrc && !fsrc && !gsrc) {
-		logPrint("Error: none of given files exist: %s %s %s\n", vrt, frg, geo);
+	char* src = filetobuf( fileName );
+	if ( !src ) {
+		// TODO: error to log
 		return false;
 	}
-	_prog = glCreateProgram();
-	if (!_prog) {
-		logPrint("Error: failed to create program");
+	if ( !attachShaderSrc( src, shaderType ) ) {
+		free(src);
 		return false;
 	}
-	if (vsrc) {
-		_vert = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(_vert, 1, (const GLchar**) & vsrc, 0);
-		glCompileShader(_vert);
-		free(vsrc);
-		glAttachShader(_prog, _vert);
-		logPrint("GLSL compiled: %s\n", vrt);
+	free(src);
+	return true;
+}
+
+bool Shader::attachShaderSrc(const char *src, GLenum shaderType)
+{
+	if ( !_prog ) {
+		_prog = glCreateProgram();
+		if (!_prog) {
+			logPrint("Error: failed to create program");
+			return false;
+		}
 	}
-	if (fsrc) {
-		_frag = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(_frag, 1, (const GLchar**) & fsrc, 0);
-		glCompileShader(_frag);
-		free(fsrc);
-		glAttachShader(_prog, _frag);
-		logPrint("GLSL compiled: %s\n", frg);
-	}
-	if (gsrc) {
-		_geom = glCreateShader(GL_GEOMETRY_SHADER);
-		glShaderSource(_geom, 1, (const GLchar**) & gsrc, 0);
-		glCompileShader(_geom);
-		free(gsrc);
-		glAttachShader(_prog, _geom);
-		logPrint("GLSL compiled: %s\n", geo);
-	}
+	GLuint	shader = glCreateShader( shaderType );
+	glShaderSource( shader, 1, (const GLchar **) &src, 0 );
+	glCompileShader( shader );
+	glAttachShader( _prog, shader );
+	glDeleteShader( shader );
+	return true;
+}
+
+bool Shader::link()
+{
 	glLinkProgram(_prog);
+
 	// Load program log
 	GLint logLen;
 	GLsizei chars;
@@ -309,9 +296,42 @@ bool Shader::fromFile(const char* vrt, const char* frg, const char* geo)
 		free(infoLog);
 		return false;
 	}
-	//logPrint("GLSL compiled\n");
-	//Log::getSingleton().printLn("GLSL compiled");
 	return true;
 }
+	
+bool Shader::loadShaders(const char *fileName)
+{
+	struct SConfigShaderType {
+		const char *	name;
+		GLenum			type;
+	};
+	static const SConfigShaderType	shaderTypes[] = {	{ "--vertex",		GL_VERTEX_SHADER },
+														{ "--tesscontrol",	GL_TESS_CONTROL_SHADER },
+														{ "--tesseval",		GL_TESS_EVALUATION_SHADER },
+														{ "--geometry",		GL_GEOMETRY_SHADER },
+														{ "--fragment",		GL_FRAGMENT_SHADER },
+														{ "--eof", 0 } };
+	char *	data = filetobuf( fileName );
+	std::string	src = data;
+	free(data);
+
+	size_t	offsets[ COUNTOF(shaderTypes) ] = {0};
+
+	for (int i = 0; i < COUNTOF(shaderTypes); ++i) {
+		offsets[i] = src.find( shaderTypes[i].name, 0 );
+		if ( offsets[i] != size_t(-1) ) {
+			src[ offsets[i] ] = '\0';
+			src[ (offsets[i] += strlen(shaderTypes[i].name)) ] = '\0';
+		}
+	}
+
+	for (int i = 0; i < COUNTOF(shaderTypes); ++i) {
+		if ( offsets[i] != size_t(-1) && shaderTypes[i].type != 0 )
+			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type );
+	}
+
+	return link();
+}
+
 }
 

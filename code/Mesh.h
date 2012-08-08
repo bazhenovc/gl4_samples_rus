@@ -34,6 +34,8 @@ public:
 
 	void draw();
 
+	void createGrid(unsigned int sideSize, float quadSize, unsigned int patchSize = 3);
+
 
 private:
 	/// VAO

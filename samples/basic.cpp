@@ -8,6 +8,13 @@
 
 using namespace framework;
 
+#ifdef _DEBUG
+#	define RESOURCE_PATH		"../../../"
+#else
+#	define RESOURCE_PATH		"../"
+#endif
+
+
 // globals
 Mesh* mesh = 0;
 Shader* shader = 0;
@@ -18,9 +25,9 @@ void init()
 	mvp = Matrix4::perspective(60.0f, 800.0f / 600.0f, 0.00001f, 3000.0f);
 	mvp *= Matrix4::translate(0, 0, -10);
 	mesh = new Mesh;
-	mesh->fromFile("media/torus.e2m");
+	mesh->fromFile( RESOURCE_PATH"media/torus.e2m" );
 	shader = new Shader;
-	shader->fromFile("media/shaders/basic.vs", "media/shaders/basic.fs", 0);
+	shader->loadShaders( RESOURCE_PATH"data/shaders/tess_quad_disp.prg" );
 }
 
 void shutdown()
