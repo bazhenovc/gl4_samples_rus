@@ -8,10 +8,12 @@
 
 using namespace framework;
 
-#ifdef _DEBUG
-#	define RESOURCE_PATH		"../../../"
-#else
-#	define RESOURCE_PATH		"../"
+#ifndef RESOURCE_PATH
+#	ifdef _DEBUG
+#		define RESOURCE_PATH		"../../../"
+#	else
+#		define RESOURCE_PATH		"../"
+#	endif
 #endif
 
 
@@ -27,7 +29,7 @@ void init()
 	mesh = new Mesh;
 	mesh->fromFile( RESOURCE_PATH"media/torus.e2m" );
 	shader = new Shader;
-	shader->loadShaders( RESOURCE_PATH"data/shaders/tess_quad_disp.prg" );
+	shader->loadShaders(RESOURCE_PATH"media/shaders/basic.prg");
 }
 
 void shutdown()
@@ -45,9 +47,7 @@ void display()
 	shader->bind();
 	shader->setUniformMatrix("mvp", mvp);
 	{
-		mesh->bind();
 		mesh->draw();
-		mesh->unbind();
 	}
 	shader->unbind();
 

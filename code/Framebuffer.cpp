@@ -71,4 +71,30 @@ void Framebuffer::create(int w, int h)
 
 }
 
+void Framebuffer::setRenderTargets(unsigned int flag)
+{
+#define ADD_RT(N) \
+	if (flag & RTF_COLOR##N) { \
+		index = N + 1; \
+		rt[N] = GL_COLOR_ATTACHMENT##N; \
+	}
+	GLuint rt[8];
+	size_t index = 0;
+
+	ADD_RT(0);
+	ADD_RT(1);
+	ADD_RT(2);
+	ADD_RT(3);
+	ADD_RT(4);
+	ADD_RT(5);
+	ADD_RT(6);
+	ADD_RT(7);
+
+	if (index > 1) {
+		glDrawBuffers(index, rt);
+	}
+#undef ADD_RT
+}
+
+
 }

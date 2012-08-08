@@ -9,7 +9,9 @@ samples_dir := samples
 inc_dirs := -Icode -Icontrib/libdds/code
 
 # flags
-cflags  := -Wall -pipe $(inc_dirs) -fPIC -DPIC -Wno-unused -Wno-unused-but-set-variable -fvisibility=default
+defines := -D'RESOURCE_PATH=""' -fPIC -DPIC
+warnings:= -Wall -Wno-unused -Wno-unused-but-set-variable
+cflags  := -pipe $(inc_dirs) $(defines) $(warnings) -fvisibility=default
 ldflags := -s -pipe -L. -Xlinker '-rpath=.'
 ldlibs  := -lGL -lglut -lGLEW
 

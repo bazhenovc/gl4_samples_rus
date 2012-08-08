@@ -91,6 +91,8 @@ bool Mesh::fromFile(const char* filename)
 	vertexBuffer->copyData(vertices, vertexNumber, sizeof ( Vertex), BU_STREAM);
 	vertexBuffer->unbind();
 
+	bind();
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
 	                      (char*) 0);
 	glEnableVertexAttribArray(0);
@@ -259,7 +261,7 @@ void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchS
 			}
 		}
 	}
-	
+
 	bind();
 	indexBuffer->bind();
 	indexBuffer->copyData( &indices[0], indices.size(), sizeof (indices[0]), GL_STATIC_DRAW );
@@ -268,7 +270,7 @@ void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchS
 	vertexBuffer->bind();
 	vertexBuffer->copyData( &vertices[0], vertices.size(), sizeof (vertices[0]), GL_STATIC_DRAW );
 	vertexBuffer->unbind();
-	
+
 	glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, 0 );
 	glEnableVertexAttribArray(0);
 

@@ -16,6 +16,18 @@
 namespace framework
 {
 
+enum RenderTargetFlag
+{
+	RTF_COLOR0 = (1 << 0),
+	RTF_COLOR1 = (1 << 1),
+	RTF_COLOR2 = (1 << 2),
+	RTF_COLOR3 = (1 << 3),
+	RTF_COLOR4 = (1 << 4),
+	RTF_COLOR5 = (1 << 5),
+	RTF_COLOR6 = (1 << 6),
+	RTF_COLOR7 = (1 << 7)
+};
+
 /**
  *	Framebuffer object
 */
@@ -47,6 +59,11 @@ public:
 	 * Unbind framebuffer
 	*/
 	void unbind();
+
+	/**
+		Set render targets
+	*/
+	void setRenderTargets(unsigned int flag);
 
 private:
 	//! fbo ID

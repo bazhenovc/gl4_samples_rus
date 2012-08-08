@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string>
+#include <string.h> // for strlen()
 
 #define logPrint printf
 #define COUNTOF( x )	(sizeof(x)/sizeof(x[0]))
@@ -247,7 +248,7 @@ bool Shader::setTexture(int loc, GLuint texUnit)
 	glUniform1i(loc, texUnit);
 	return true;
 }
-	
+
 bool Shader::attachShaderFromFile(const char *fileName, GLenum shaderType)
 {
 	char* src = filetobuf( fileName );
@@ -298,7 +299,7 @@ bool Shader::link()
 	}
 	return true;
 }
-	
+
 bool Shader::loadShaders(const char *fileName)
 {
 	struct SConfigShaderType {
@@ -317,7 +318,7 @@ bool Shader::loadShaders(const char *fileName)
 
 	size_t	offsets[ COUNTOF(shaderTypes) ] = {0};
 
-	for (int i = 0; i < COUNTOF(shaderTypes); ++i) {
+	for (size_t i = 0; i < COUNTOF(shaderTypes); ++i) {
 		offsets[i] = src.find( shaderTypes[i].name, 0 );
 		if ( offsets[i] != size_t(-1) ) {
 			src[ offsets[i] ] = '\0';
@@ -325,7 +326,7 @@ bool Shader::loadShaders(const char *fileName)
 		}
 	}
 
-	for (int i = 0; i < COUNTOF(shaderTypes); ++i) {
+	for (size_t i = 0; i < COUNTOF(shaderTypes); ++i) {
 		if ( offsets[i] != size_t(-1) && shaderTypes[i].type != 0 )
 			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type );
 	}
