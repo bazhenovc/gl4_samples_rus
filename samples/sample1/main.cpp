@@ -47,11 +47,11 @@ void init()
 	heightMap		= new Texture( GL_TEXTURE_2D );
 
 	diffuseMap->bind();
-	//diffuseMap->loadDDS( "" );	// TODO
+	diffuseMap->loadDDS( "textures/rockwall.dds" );
 	diffuseMap->unbind();
 
 	heightMap->bind();
-	//heightMap->loadDDS( "" );	// TODO
+	heightMap->loadDDS( "textures/height_map.dds" );
 	heightMap->unbind();
 
 	program			= new Program();
