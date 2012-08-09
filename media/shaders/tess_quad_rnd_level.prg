@@ -117,15 +117,15 @@ out	TEvalData {
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return ( height * 0.1 );
 }
 	

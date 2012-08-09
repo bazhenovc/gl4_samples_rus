@@ -8,10 +8,11 @@
 
 layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
-uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unHeightScale	= 10.0;
-uniform mat4	unMVPMatrix;
+uniform float		unGridScale		= 100.0;
+uniform float		unMaxTessLevel	= 32.0;
+uniform float		unHeightScale	= 10.0;
+uniform mat4		unMVPMatrix;
+uniform sampler2D	unHeightMap;
 
 out	TVertData {
 	vec2	vScrCoords;	// position in screen
@@ -106,10 +107,10 @@ void main()
 										Input[2].bInScreen, Input[3].bInScreen ) );
 		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 0.0;
 		
-		gl_TessLevelOuter[0] = Level( Input[0].fLevel, Input[3].fLevel ) * k;
-		gl_TessLevelOuter[1] = Level( Input[0].fLevel, Input[1].fLevel ) * k;
-		gl_TessLevelOuter[2] = Level( Input[1].fLevel, Input[2].fLevel ) * k;
-		gl_TessLevelOuter[3] = Level( Input[2].fLevel, Input[3].fLevel ) * k;
+		gl_TessLevelOuter[0] = Level( Input[0].vScrCoords, Input[3].vScrCoords ) * k;
+		gl_TessLevelOuter[1] = Level( Input[0].vScrCoords, Input[1].vScrCoords ) * k;
+		gl_TessLevelOuter[2] = Level( Input[1].vScrCoords, Input[2].vScrCoords ) * k;
+		gl_TessLevelOuter[3] = Level( Input[2].vScrCoords, Input[3].vScrCoords ) * k;
 		float	max_level = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1]),
 								 max( gl_TessLevelOuter[2], gl_TessLevelOuter[3] ) );
 		gl_TessLevelInner[0] = max_level * k;
@@ -155,15 +156,15 @@ out	TEvalData {
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return ( height * 0.1 );
 }
 	
