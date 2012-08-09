@@ -16,13 +16,13 @@ Program::States const & Program::getStates() const
 void Program::setConstUniforms(Shader *shader) const
 {
 	shader->setTexture( shader->getLoc("unDiffuseMap"), 0 );
-	shader->setTexture( shader->getLoc("unNormalMap"), 1 );
-	shader->setTexture( shader->getLoc("unHeightMap"), 2 );
+	shader->setTexture( shader->getLoc("unHeightMap"), 1 );
+	shader->setTexture( shader->getLoc("unNormalMap"), 2 );
 }
 
 void Program::setUniforms(Shader *shader) const
 {
-	shader->setUniformMatrix( "unMVPMatrix",						_states.mvp );
+	shader->setUniformMatrix( "unMVPMatrix",					_states.mvp );
 	shader->setUniformFloat( shader->getLoc("unGridScale"),		_states.gridScale );
 	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	_states.maxTessLevel );
 	shader->setUniformFloat( shader->getLoc("unHeightScale"),	_states.heightScale );

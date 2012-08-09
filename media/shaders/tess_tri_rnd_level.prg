@@ -42,6 +42,8 @@ void main()
 
 layout(vertices = 3) out;
 
+uniform bool	unIncorrectMode = false;
+
 in	TVertData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
@@ -65,6 +67,9 @@ void main()
 		gl_TessLevelOuter[0] = max( Input[1].fLevel, Input[2].fLevel );
 		gl_TessLevelOuter[1] = max( Input[0].fLevel, Input[2].fLevel );
 		gl_TessLevelOuter[2] = max( Input[0].fLevel, Input[1].fLevel );
+	}
+	if ( unIncorrectMode ) {
+		gl_TessLevelOuter[I] = Input[I].fLevel;
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
