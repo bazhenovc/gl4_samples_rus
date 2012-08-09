@@ -20,7 +20,7 @@ private:
 public:
 	View():
 		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL),
-		_colorTarget(NULL), _normalTarget(NULL), _fbo(NULL), _depthTarget(NULL)
+		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL)
 	{}
 
 	~View()
@@ -42,16 +42,16 @@ public:
 
 		if ( !_colorTarget )
 			_colorTarget  = new Texture( GL_TEXTURE_2D );
-		
+
 		if ( !_normalTarget )
 			_normalTarget = new Texture( GL_TEXTURE_2D );
-		
+
 		if ( !_depthTarget )
 			_depthTarget  = new Texture( GL_TEXTURE_2D );
 
 		if ( !_fbo )
 			_fbo = new Framebuffer();
-		
+
 		_colorTarget->bind();
 		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
 		_normalTarget->bind();
@@ -94,7 +94,7 @@ public:
 		_depthTarget->bind(  TEX_DEPTH );
 
 		fullScreenQuad->draw();
-		
+
 		_depthTarget->unbind(  TEX_DEPTH );
 		_normalTarget->unbind( TEX_NORMAL );
 		_colorTarget->unbind(  TEX_DIFFUSE );
@@ -196,10 +196,10 @@ public:
 		if ( regenerate ) {
 			gridMesh->createGrid( gridSize, 1.f / float(gridSize), _patchSize );
 		}
-		
+
 		program->bind( shader );
 		shader->setUniformInt( shader->getLoc("unIncorrectMode"), !!(i & 1) );
-		
+
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
 
@@ -233,7 +233,7 @@ public:
 
 		if ( !_fbo )
 			_fbo = new Framebuffer();
-		
+
 		if ( !_renderTarget )
 			_renderTarget = new Texture( GL_TEXTURE_2D );
 
@@ -260,7 +260,7 @@ public:
 		if ( i == 0 )
 		{
 			program->bind( _tessShader );
-			
+
 			diffuseMap->bind( TEX_DIFFUSE );
 			heightMap->bind(  TEX_HEIGHT );
 			_renderTarget->bind( TEX_NORMAL );
@@ -274,7 +274,7 @@ public:
 		{
 			// generate normal and tess level map
 			_fbo->bind();
-			
+
 			glDepthMask( GL_FALSE );
 			glDisable( GL_DEPTH_TEST );
 
@@ -326,10 +326,10 @@ public:
 	void draw(int)
 	{
 		program->bind( _shader );
-		
+
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
-		
+
 		gridMesh->draw();
 	}
 };
@@ -363,10 +363,10 @@ public:
 	void draw(int)
 	{
 		program->bind( _shader );
-		
+
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
-		
+
 		gridMesh->draw();
 	}
 };
@@ -405,10 +405,10 @@ public:
 		Shader *	shader = (i & 1) ? _shaderDist : _shaderScreenSpace;
 
 		program->bind( shader );
-		
+
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
-		
+
 		gridMesh->draw();
 	}
 };

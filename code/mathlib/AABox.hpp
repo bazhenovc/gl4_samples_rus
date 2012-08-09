@@ -12,17 +12,17 @@ namespace framework
 /** Axes-aligned bounding box */
 struct AABox {
 	/// Minimal edge
-	Vector3 minEdge;
+	glm::vec3 minEdge;
 	/// Maximal edge
-	Vector3 maxEdge;
+	glm::vec3 maxEdge;
 
 	AABox(void)
 		: minEdge(0, 0, 0), maxEdge(0, 0, 0) { }
 
-	AABox(const Vector3& min, const Vector3 & max)
+	AABox(const glm::vec3& min, const glm::vec3 & max)
 		: minEdge(min), maxEdge(max) { }
 
-	AABox(const Vector3 & point)
+	AABox(const glm::vec3 & point)
 		: minEdge(point), maxEdge(point) { }
 
 	AABox(float minx, float miny, float minz,
@@ -41,7 +41,7 @@ struct AABox {
 		return AABox(box.minEdge, box.maxEdge);
 	}
 
-	void addPoint(const Vector3 & v) {
+	void addPoint(const glm::vec3 & v) {
 		addPoint(v.x, v.y, v.z);
 	}
 
@@ -65,7 +65,7 @@ struct AABox {
 		addPoint(box.minEdge);
 	}
 
-	void set(const Vector3& min, const Vector3 & max) {
+	void set(const glm::vec3& min, const glm::vec3 & max) {
 		minEdge = min;
 		maxEdge = max;
 	}
@@ -75,21 +75,21 @@ struct AABox {
 		minEdge = box.minEdge;
 	}
 
-	Vector3 getCenter() const {
+	glm::vec3 getCenter() const {
 		return ( maxEdge + minEdge) / 2;
 	}
 
-	Vector3 getExtent() const {
+	glm::vec3 getExtent() const {
 		return maxEdge - minEdge;
 	}
 
 	float getVolume() const {
-		const Vector3 e = getExtent();
+		const glm::vec3 e = getExtent();
 		return e.x * e.y * e.z;
 	}
 
 	float getArea() const {
-		const Vector3 e = getExtent();
+		const glm::vec3 e = getExtent();
 		return 2 * (e.x * e.y + e.x * e.z + e.y * e.z);
 	}
 
@@ -97,13 +97,13 @@ struct AABox {
 		return maxEdge == minEdge;
 	}
 
-	bool isPointInside(const Vector3 & point) const {
+	bool isPointInside(const glm::vec3 & point) const {
 		return ( point.x >= minEdge.x && point.x <= maxEdge.x &&
 		         point.y >= minEdge.y && point.y <= maxEdge.y &&
 		         point.z >= minEdge.z && point.z <= maxEdge.z);
 	}
 
-	bool isPointCompletelyInside(const Vector3 & point) const {
+	bool isPointCompletelyInside(const glm::vec3 & point) const {
 		return ( point.x > minEdge.x && point.x < maxEdge.x &&
 		         point.y > minEdge.y && point.y < maxEdge.y &&
 		         point.z > minEdge.z && point.z < maxEdge.z);
@@ -128,8 +128,8 @@ struct AABox {
 		}
 	}
 
-	Vector3 getVertexP(const Vector3 & normal) {
-		Vector3 res = minEdge;
+	glm::vec3 getVertexP(const glm::vec3 & normal) {
+		glm::vec3 res = minEdge;
 
 		if (normal.x > 0)
 			res.x += maxEdge.x;
@@ -143,8 +143,8 @@ struct AABox {
 		return ( res);
 	}
 
-	Vector3 getVertexN(const Vector3 & normal) {
-		Vector3 res = minEdge;
+	glm::vec3 getVertexN(const glm::vec3 & normal) {
+		glm::vec3 res = minEdge;
 
 		if (normal.x < 0)
 			res.x += maxEdge.x;

@@ -3,11 +3,7 @@
 
 #include <GL/glew.h>
 
-#include <mathlib/Vector2.hpp>
-#include <mathlib/Vector3.hpp>
-#include <mathlib/Vector4.hpp>
-#include <mathlib/Matrix3.hpp>
-#include <mathlib/Matrix4.hpp>
+#include <glm/glm.hpp>
 
 namespace framework
 {
@@ -69,37 +65,37 @@ public:
 	/// @param name Var name
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(const char* name, const Vector2& value);
+	bool setUniformVector(const char* name, const glm::vec2& value);
 
 	/// Uniform variables handling method.
 	/// @param loc Var location
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(int loc, const Vector2& value);
+	bool setUniformVector(int loc, const glm::vec2& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(const char* name, const Vector3& value);
+	bool setUniformVector(const char* name, const glm::vec3& value);
 
 	/// Uniform variables handling method.
 	/// @param loc Var location
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(int loc, const Vector3& value);
+	bool setUniformVector(int loc, const glm::vec3& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(const char* name, const Vector4& value);
+	bool setUniformVector(const char* name, const glm::vec4& value);
 
 	/// Uniform variables handling method.
 	/// @param loc Var location
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformVector(int loc, const Vector4& value);
+	bool setUniformVector(int loc, const glm::vec4& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
@@ -129,13 +125,13 @@ public:
 	/// @param name Var name
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformMatrix(const char* name, const Matrix3& value);
+	bool setUniformMatrix(const char* name, const glm::mat3& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
 	/// @param value Var
 	/// @return Assignment result
-	bool setUniformMatrix(const char* name, const Matrix4& value);
+	bool setUniformMatrix(const char* name, const glm::mat4& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
@@ -146,12 +142,12 @@ public:
 	/// Get named vector
 	/// @param name Uniform name
 	/// @return Vector for name.
-	Vector4 getUniformVector(const char* name);
+	glm::vec4 getUniformVector(const char* name);
 
 	/// Get vector for location
 	/// @param loc Vector location
 	/// @return Vector
-	Vector4 getUniformVector(int loc);
+	glm::vec4 getUniformVector(int loc);
 
 	/// Get location for uniform name
 	/// @param name Uniform name

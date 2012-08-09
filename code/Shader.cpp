@@ -6,6 +6,8 @@
 #include <string>
 #include <string.h> // for strlen()
 
+#include <glm/gtc/type_ptr.hpp>
+
 #define logPrint printf
 #define COUNTOF( x )	(sizeof(x)/sizeof(x[0]))
 
@@ -79,60 +81,60 @@ GLuint Shader::getAttrLocation(const char* name)
 	return glGetAttribLocation(_prog, name);
 }
 
-bool Shader::setUniformVector(const char* name, const Vector2& value)
+bool Shader::setUniformVector(const char* name, const glm::vec2& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
 	if (loc < 0) {
 		return false;
 	}
-	glUniform2fv(loc, 1, value.ptr());
+	glUniform2fv(loc, 1, glm::value_ptr(value));
 	return true;
 }
 
-bool Shader::setUniformVector(int loc, const Vector2& value)
+bool Shader::setUniformVector(int loc, const glm::vec2& value)
 {
 	if (loc < 0) {
 		return false;
 	}
-	glUniform2fv(loc, 1, value.ptr());
+	glUniform2fv(loc, 1, glm::value_ptr(value));
 	return true;
 }
 
-bool Shader::setUniformVector(const char* name, const Vector3& value)
-{
-	int loc = glGetUniformLocation(_prog, name);
-	if (loc < 0) {
-		return false;
-	}
-	glUniform3fv(loc, 1, value.ptr());
-	return true;
-}
-
-bool Shader::setUniformVector(int loc, const Vector3& value)
-{
-	if (loc < 0) {
-		return false;
-	}
-	glUniform3fv(loc, 1, value.ptr());
-	return true;
-}
-
-bool Shader::setUniformVector(const char* name, const Vector4& value)
+bool Shader::setUniformVector(const char* name, const glm::vec3& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
 	if (loc < 0) {
 		return false;
 	}
-	glUniform4fv(loc, 1, value.ptr());
+	glUniform3fv(loc, 1, glm::value_ptr(value));
 	return true;
 }
 
-bool Shader::setUniformVector(int loc, const Vector4& value)
+bool Shader::setUniformVector(int loc, const glm::vec3& value)
 {
 	if (loc < 0) {
 		return false;
 	}
-	glUniform4fv(loc, 1, value.ptr());
+	glUniform3fv(loc, 1, glm::value_ptr(value));
+	return true;
+}
+
+bool Shader::setUniformVector(const char* name, const glm::vec4& value)
+{
+	int loc = glGetUniformLocation(_prog, name);
+	if (loc < 0) {
+		return false;
+	}
+	glUniform4fv(loc, 1, glm::value_ptr(value));
+	return true;
+}
+
+bool Shader::setUniformVector(int loc, const glm::vec4& value)
+{
+	if (loc < 0) {
+		return false;
+	}
+	glUniform4fv(loc, 1, glm::value_ptr(value));
 	return true;
 }
 
@@ -174,23 +176,23 @@ bool Shader::setUniformInt(int loc, const int value)
 	return true;
 }
 
-bool Shader::setUniformMatrix(const char* name, const Matrix3& value)
+bool Shader::setUniformMatrix(const char* name, const glm::mat3& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
 	if (loc < 0) {
 		return false;
 	}
-	glUniformMatrix3fv(loc, 1, GL_FALSE, value.ptr());
+	glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 	return true;
 }
 
-bool Shader::setUniformMatrix(const char* name, const Matrix4& value)
+bool Shader::setUniformMatrix(const char* name, const glm::mat4& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
 	if (loc < 0) {
 		return false;
 	}
-	glUniformMatrix4fv(loc, 1, GL_FALSE, value.ptr());
+	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 	return true;
 }
 
@@ -204,25 +206,25 @@ bool Shader::setUniformMatrix(const char* name, const float value[16])
 	return true;
 }
 
-Vector4 Shader::getUniformVector(const char* name)
+glm::vec4 Shader::getUniformVector(const char* name)
 {
 	float v[4] = {0};
 	int loc = glGetUniformLocation(_prog, name);
 	if (loc < 0) {
-		return Vector4(v);
+		return glm::vec4();
 	}
 	glGetUniformfv(_prog, loc, v);
-	return Vector4(v);
+	return glm::vec4(v[0], v[1], v[2], v[3]);
 }
 
-Vector4 Shader::getUniformVector(int loc)
+glm::vec4 Shader::getUniformVector(int loc)
 {
 	float v[4] = {0};
 	if (loc < 0) {
-		return Vector4(v);
+		return glm::vec4();
 	}
 	glGetUniformfv(_prog, loc, v);
-	return Vector4(v);
+	return glm::vec4(v[0], v[1], v[2], v[3]);
 }
 
 int Shader::getLoc(const char* name)

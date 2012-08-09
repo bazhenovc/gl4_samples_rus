@@ -5,7 +5,7 @@
 #ifndef _INC_MATHLIB_FRUSTUM_HPP
 #define	_INC_MATHLIB_FRUSTUM_HPP
 
-#include <mathlib/Matrix4.hpp>
+#include <mathlib/glm::mat4.hpp>
 #include <mathlib/Vector3.hpp>
 #include <mathlib/Vector4.hpp>
 
@@ -32,12 +32,12 @@ enum Intersect {
 /** Frustum */
 /// TODO: methods should return a distance to the object
 struct Frustum {
-	Vector4 planes[6];
+	glm::vec4 planes[6];
 
 	Frustum(void) { }
 
 	Intersect boxInFrustum(AABox & aabb) const {
-		Vector3 center = aabb.getCenter(),
+		glm::vec3 center = aabb.getCenter(),
 		        halfDiag = aabb.maxEdge;
 		float m, n;
 		m = n = 0.0f;
@@ -54,9 +54,9 @@ struct Frustum {
 		return INSIDE;
 	}
 
-	void compute(const Matrix4& proj, const Matrix4 & modl) {
-		Vector4 *p;
-		Matrix4 clip = proj * modl;
+	void compute(const glm::mat4& proj, const glm::mat4 & modl) {
+		glm::vec4 *p;
+		glm::mat4 clip = proj * modl;
 		p = &planes[RIGHT];
 		p->x = clip[3] - clip[0];
 		p->y = clip[7] - clip[4];

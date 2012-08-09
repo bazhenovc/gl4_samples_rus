@@ -22,7 +22,7 @@ class Program
 public:
 	struct States
 	{
-		Matrix4		mvp;
+		glm::mat4	mvp;
 		float		gridScale;
 		float		maxTessLevel;
 		float		heightScale;
