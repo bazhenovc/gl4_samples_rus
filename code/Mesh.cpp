@@ -83,15 +83,9 @@ bool Mesh::fromFile(const char* filename)
 	*/
 
 	bind();
-	indexBuffer->bind();
-	indexBuffer->copyData(indices, indexNumber, sizeof ( unsigned int), BU_STREAM);
-	indexBuffer->unbind();
-	// Copy vertices
-	vertexBuffer->bind();
-	vertexBuffer->copyData(vertices, vertexNumber, sizeof ( Vertex), BU_STREAM);
-	vertexBuffer->unbind();
 
-	bind();
+	indexBuffer->copyData(indices, indexNumber, sizeof ( unsigned int), BU_STREAM);
+	vertexBuffer->copyData(vertices, vertexNumber, sizeof ( Vertex), BU_STREAM);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
 	                      (char*) 0);
@@ -184,13 +178,9 @@ void Mesh::makeQuad()
 	unsigned int quadIndices[] = {2, 1, 0, 2, 3, 1};
 
 	bind();
-	getVertexBuffer()->bind();
-	getVertexBuffer()->copyData(quadData, 4, sizeof(Vertex), BU_STATIC);
-	getVertexBuffer()->unbind();
 
-	getIndexBuffer()->bind();
+	getVertexBuffer()->copyData(quadData, 4, sizeof(Vertex), BU_STATIC);
 	getIndexBuffer()->copyData(quadIndices, 6, sizeof(unsigned int), BU_STATIC);
-	getIndexBuffer()->unbind();
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex),
 	                      (char*) 0);
@@ -210,7 +200,7 @@ void Mesh::makeQuad()
 void Mesh::draw()
 {
 	glBindVertexArray(vao);
-	glDrawElements(type, getIndexBuffer()->getSize(),
+	glDrawElements( type, getIndexBuffer()->getSize(),
 	               GL_UNSIGNED_INT, 0);
 }
 
@@ -263,16 +253,14 @@ void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchS
 	}
 
 	bind();
-	indexBuffer->bind();
-	indexBuffer->copyData( &indices[0], indices.size(), sizeof (indices[0]), GL_STATIC_DRAW );
-	indexBuffer->unbind();
 
-	vertexBuffer->bind();
+	indexBuffer->copyData( &indices[0], indices.size(), sizeof (indices[0]), GL_STATIC_DRAW );
 	vertexBuffer->copyData( &vertices[0], vertices.size(), sizeof (vertices[0]), GL_STATIC_DRAW );
-	vertexBuffer->unbind();
 
 	glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, 0 );
 	glEnableVertexAttribArray(0);
+
+	type = GL_PATCHES;
 
 	unbind();
 }

@@ -10,9 +10,7 @@ layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 uniform float	unGridScale		= 100.0;
 uniform float	unMaxTessLevel	= 32.0;
 uniform float	unHeightScale	= 10.0;
-uniform float	unDetailLevel	= 1000.0;
 uniform mat4	unMVPMatrix;
-uniform vec2	unViewport		= vec2( 800.0, 600.0 );
 
 out	TVertData {
 	vec2	vScrCoords;	// position in screen
@@ -25,11 +23,13 @@ out	TVertData {
 void main()
 {
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
-	vec4	proj_pos	= unMVPMatrix * gl_Position;
-	Output.vScrCoords	= ( proj_pos.xy / proj_pos.w + 1.0 ) * 0.5 * unViewport;
 	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
+	vec4	pos			= unMVPMatrix * vec4( gl_Position.xyz +
+						  texture( unHeightMap, Output.vTexcoord1 ).r *
+						  Output.vNormal * unHeightScale, 1.0 );
+	Output.vScrCoords	= pos.xy / pos.w;
 }
 
 
@@ -43,7 +43,7 @@ void main()
 layout(vertices = 3) out;
 
 uniform float	unMaxTessLevel	= 32.0;
-uniform float	unDetailLevel	= 7e-5;	//unMaxTessLevel / unViewport.x * unViewport.y;
+uniform float	unDetailLevel	= 1000.0;
 
 in	TVertData {
 	vec2	vScrCoords;	// position in screen
@@ -61,7 +61,7 @@ out TContData {
 
 float Level(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel, 1.0, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 0.005, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -87,7 +87,7 @@ void main()
 --tesseval
 #version 410 core
 
-layout(triangles, equal_spacing, ccw) in;
+layout(triangles, fractional_even_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
@@ -111,15 +111,19 @@ out	TEvalData {
 		gl_TessCoord.y * _a[1] _p + \
 		gl_TessCoord.z * _a[2] _p )
 
-
 float PCF(in vec2 vTexcoord)
 {
-	float	height = texture( unHeightMap, vTexcoord ).r * 2.0;
-	vec4	v0 = textureGatherOffsets( unHeightMap, vTexcoord, ivec2[]( ivec2(-1,-1),  ivec2(0,-1),  ivec2(1,-1),  ivec2(1,0) ) );
-	vec4	v1 = textureGatherOffsets( unHeightMap, vTexcoord, ivec2[]( ivec2(-1,0),   ivec2(-1,1),  ivec2(0,1),   ivec2(1,1) ) );
-	height += v0.x + v0.y + v0.z + v0.w;
-	height += v1.x + v1.y + v1.z + v1.w;
-	return height * 0.1;
+	float	height = 0.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	return ( height * 0.1 );
 }
 	
 void main()
@@ -155,7 +159,7 @@ void main()
 {
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
-	outNormal.rgb	= Input.vNormal;
+	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
 	outNormal.a		= Input.fLevel;
 }
 

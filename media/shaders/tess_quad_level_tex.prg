@@ -37,7 +37,6 @@ void main()
 
 layout(vertices = 4) out;
 
-
 in	TVertData {
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
@@ -101,15 +100,19 @@ out	TEvalData {
 		mix( a[3] p, a[2] p, gl_TessCoord.x ), \
 		gl_TessCoord.y ) )
 
-
 float PCF(in vec2 vTexcoord)
 {
-	float	height = texture( unHeightMap, vTexcoord ).r * 2.0;
-	vec4	v0 = textureGatherOffsets( unHeightMap, vTexcoord, ivec2[]( ivec2(-1,-1),  ivec2(0,-1),  ivec2(1,-1),  ivec2(1,0) ) );
-	vec4	v1 = textureGatherOffsets( unHeightMap, vTexcoord, ivec2[]( ivec2(-1,0),   ivec2(-1,1),  ivec2(0,1),   ivec2(1,1) ) );
-	height += v0.x + v0.y + v0.z + v0.w;
-	height += v1.x + v1.y + v1.z + v1.w;
-	return height * 0.1;
+	float	height = 0.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	return ( height * 0.1 );
 }
 	
 void main()
@@ -146,7 +149,7 @@ void main(void)
 {
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
-	outNormal.rgb	= Input.vNormal;
+	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
 	outNormal.a		= fLevel;
 }
 

@@ -181,6 +181,9 @@ public:
 
 	// Load shaders from single file
 	bool loadShaders(const char *fileName);
+
+	// Get patch size
+	int getPatchSize();
 };
 }
 

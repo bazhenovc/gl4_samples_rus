@@ -334,5 +334,12 @@ bool Shader::loadShaders(const char *fileName)
 	return link();
 }
 
+int Shader::getPatchSize()
+{
+	GLint	i_verts = 0;
+	glGetProgramiv( _prog, GL_TESS_CONTROL_OUTPUT_VERTICES, &i_verts );
+	return i_verts;
+}
+
 }
 
