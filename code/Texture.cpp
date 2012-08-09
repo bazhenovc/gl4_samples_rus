@@ -4,6 +4,9 @@
 #include "libdds.h"
 #include "libdds_opengl.h"
 
+#include <IL/il.h>
+#include <IL/ilu.h>
+
 #include "stdio.h"
 
 namespace framework
@@ -65,6 +68,43 @@ bool Texture::loadDDS(const char *filename)
 	id = texInfo.id;
 	width = texInfo.width;
 	height = texInfo.height;
+	return true;
+}
+
+bool Texture::loadImage(const char *filename)
+{
+	static bool ilinit = false;
+	if (!ilinit) {
+		ilinit = true;
+		ilInit();
+		iluInit();
+	}
+	ILuint ilid = 0;
+
+	ilGenImages(1, &ilid);
+	ilBindImage(ilid);
+
+	ilLoadImage(filename);
+
+	if (IL_NO_ERROR != ilGetError()) {
+		ilDeleteImages(1, &id);
+		return false;
+	}
+
+	width = ilGetInteger(IL_IMAGE_WIDTH);
+	height = ilGetInteger(IL_IMAGE_HEIGHT);
+
+	glGenTextures(1, &id);
+	bind();
+
+	glTexImage2D(type, 0, ilGetInteger(IL_IMAGE_FORMAT), width, height, 0,
+				 ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE),
+				 ilGetData());
+
+	ilDeleteImages(1, &id);
+
+	unbind();
+
 	return true;
 }
 

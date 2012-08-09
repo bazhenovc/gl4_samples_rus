@@ -45,6 +45,7 @@ public:
 				  GLuint byteType = GL_UNSIGNED_BYTE);
 
 	bool loadDDS(const char* filename);
+	bool loadImage(const char* filename);
 
 private:
 

@@ -13,7 +13,7 @@ defines := -D'RESOURCE_PATH=""' -fPIC -DPIC
 warnings:= -Wall -Wno-unused -Wno-unused-but-set-variable -Wno-sign-compare
 cflags  := -pipe $(inc_dirs) $(defines) $(warnings) -fvisibility=default
 ldflags := -s -pipe -L. -Xlinker '-rpath=.'
-ldlibs  := -lGL -lglut -lGLEW
+ldlibs  := -lGL -lglut -lGLEW -lIL -lILU
 
 # objects
 framework_srcs := $(shell find $(src_dir) -type f -name "*.cpp")
