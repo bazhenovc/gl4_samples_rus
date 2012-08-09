@@ -6,7 +6,7 @@ libdds_dir := contrib/libdds/code
 samples_dir := samples
 
 # include dirs
-inc_dirs := -Icode -Icontrib/libdds/code
+inc_dirs := -Icode -Icontrib/libdds/code -Icontrib/glm/
 
 # flags
 defines := -D'RESOURCE_PATH=""' -fPIC -DPIC
@@ -17,6 +17,7 @@ ldlibs  := -lGL -lglut -lGLEW
 
 # objects
 framework_srcs := $(shell find $(src_dir) -type f -name "*.cpp")
+framework_hdrs := $(shell find $(src_dir) -type f -name "*.h")
 framework_deps := $(patsubst $(src_dir)/%.cpp,build/%.d,$(framework_srcs))
 framework_objs := $(patsubst $(src_dir)/%.cpp,build/%.cpp.o,$(framework_srcs))
 
@@ -60,6 +61,6 @@ build/%.c.o: $(libdds_dir)/%.c Makefile
 	@echo 'CC $< -> $@'
 	@gcc $(cflags) -MD -MMD -MP -c $< -o $@
 
-%: $(samples_dir)/%.cpp $(samples_dir)/%.h Makefile
+%: $(samples_dir)/%.cpp $(framework_hdrs) Makefile
 	@echo 'CCLD $< -> $@'
 	@g++ $(cflags) $(ldflags) -lframework $< -o $@

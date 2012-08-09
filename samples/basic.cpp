@@ -5,7 +5,9 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "mathlib/Matrix4.hpp"
+#include "Camera.h"
+
+#include <stdio.h>
 
 using namespace framework;
 
@@ -22,12 +24,20 @@ using namespace framework;
 Mesh* mesh = 0;
 Shader* shader = 0;
 Texture* texture = 0;
-Matrix4 mvp;
+
+glm::mat4 mvp;
+Camera cam;
+glm::vec2 mousePos;
+
+bool keys[512];
 
 void init()
 {
-	mvp = Matrix4::perspective(60.0f, 800.0f / 600.0f, 0.00001f, 3000.0f);
-	mvp *= Matrix4::translate(0, 0, -10);
+	memset(keys, 0, 512 * sizeof(bool));
+
+	mvp = glm::perspective(60.0f, 800.0f / 600.0f, 0.00001f, 3000.0f);
+	cam.pos = glm::vec3(0, 0, -10);
+	cam.target = glm::vec3(0, 0, -1);
 
 	mesh = new Mesh;
 	mesh->fromFile( RESOURCE_PATH"media/torus.e2m" );
@@ -50,12 +60,19 @@ void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	mvp *= Matrix4::rotate(1, 1, 1, 1);
+	if (keys['w'])
+		cam.move(1);
+	if (keys['s'])
+		cam.move(-1);
+	if (keys['a'])
+		cam.rotate(1);
+	if (keys['d'])
+		cam.rotate(-1);
 
 	texture->bind();
 
 	shader->bind();
-	shader->setUniformMatrix("mvp", mvp);
+	shader->setUniformMatrix("mvp", mvp * cam.toMatrix());
 	shader->setTexture("diffuse", 0);
 	{
 		mesh->draw();
@@ -74,6 +91,32 @@ void keyDown(unsigned char key, int, int)
 {
 	if (27 == key)
 		exit(0);
+
+	if (key < 512)
+		keys[key] = true;
+}
+
+void keyUp(unsigned char key, int, int)
+{
+	if (key < 512)
+		keys[key] = false;
+}
+
+void mouseDown(int button, int state, int x, int y)
+{
+	mousePos = glm::vec2((float)x, (float)y);
+}
+
+void mouseMotion(int x, int y)
+{
+	glm::vec2 newMousePos = glm::vec2((float)x, (float)y);
+
+	glm::vec2 delta = newMousePos - mousePos;
+
+	cam.rotate(-delta.x / 2);
+	cam.rotateUp(-delta.y / 2);
+
+	mousePos = newMousePos;
 }
 
 int main(int argc, char** argv)
@@ -88,7 +131,10 @@ int main(int argc, char** argv)
 	glutCreateWindow("basic");
 	glutIdleFunc(display);
 	glutReshapeFunc(reshape);
-	glutKeyboardUpFunc(keyDown);
+	glutKeyboardFunc(keyDown);
+	glutKeyboardUpFunc(keyUp);
+	glutMouseFunc(mouseDown);
+	glutMotionFunc(mouseMotion);
 
 	glewExperimental = GL_TRUE;
 	glewInit();

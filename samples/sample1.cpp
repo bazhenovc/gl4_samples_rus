@@ -6,7 +6,6 @@
 #include "Program.h"
 #include "Texture.h"
 #include "Framebuffer.h"
-#include "mathlib/Matrix4.hpp"
 #include <vector>
 #include <string>
 
@@ -105,10 +104,10 @@ public:
 		// i:	0 - triangles,		2 - quads
 		//		1 - correct mode,	3 - incorrect mode
 		Shader *	shader	= (i & 2) ? _shaderTessQuad : _shaderTessTri;
-		
+
 		program.bind( shader );
 		shader->setUniformInt( shader->getLoc("unIncorrectMode"), !!(i & 1) );
-		
+
 		glActiveTexture( GL_TEXTURE0 );
 		diffuseMap->bind();
 
@@ -162,7 +161,7 @@ public:
 		if ( i == 0 )
 		{
 			program.bind( _tessShader );
-			
+
 			glActiveTexture( GL_TEXTURE0 );
 			diffuseMap->bind();
 
@@ -180,7 +179,7 @@ public:
 		else
 		{
 			_fbo->bind();
-			
+
 			glDepthMask( GL_FALSE );
 			glDepthFunc( GL_NEVER );
 
