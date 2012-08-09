@@ -16,6 +16,9 @@ public:
 	void bind();
 	void unbind();
 
+	void bind(int stage);
+	void unbind(int stage);
+
 	inline unsigned int getID() const
 	{
 		return id;

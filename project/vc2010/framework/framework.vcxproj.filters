@@ -40,7 +40,6 @@
     <ClInclude Include="..\..\..\code\Vertex.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
-    <ClInclude Include="..\..\..\code\Program.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
@@ -49,6 +48,5 @@
     <ClCompile Include="..\..\..\code\Shader.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />
-    <ClCompile Include="..\..\..\code\Program.cpp" />
   </ItemGroup>
 </Project>
