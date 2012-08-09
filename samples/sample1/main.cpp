@@ -5,7 +5,6 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Framebuffer.h"
-#include "mathlib/Matrix4.hpp"
 
 using namespace framework;
 
@@ -105,7 +104,7 @@ void keyDown(unsigned char key, int, int)
 	if ( key == 27 )	exit(0);
 
 	// + -
-	if ( key == '+' )	program->getStates().maxTessLevel++;	
+	if ( key == '+' )	program->getStates().maxTessLevel++;
 	if ( key == '-' )	program->getStates().maxTessLevel--;
 
 	// < >

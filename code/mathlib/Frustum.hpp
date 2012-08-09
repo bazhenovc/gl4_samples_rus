@@ -5,7 +5,7 @@
 #ifndef _INC_MATHLIB_FRUSTUM_HPP
 #define	_INC_MATHLIB_FRUSTUM_HPP
 
-#include <mathlib/Matrix4.hpp>
+#include <mathlib/glm::mat4.hpp>
 #include <mathlib/Vector3.hpp>
 #include <mathlib/Vector4.hpp>
 
