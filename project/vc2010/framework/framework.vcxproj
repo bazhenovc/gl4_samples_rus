@@ -98,7 +98,6 @@
     <ClInclude Include="..\..\..\code\mathlib\Vector3.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Vector4.hpp" />
     <ClInclude Include="..\..\..\code\Mesh.h" />
-    <ClInclude Include="..\..\..\code\Program.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Shader.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
@@ -108,7 +107,6 @@
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
     <ClCompile Include="..\..\..\code\HardwareBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Mesh.cpp" />
-    <ClCompile Include="..\..\..\code\Program.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Shader.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />

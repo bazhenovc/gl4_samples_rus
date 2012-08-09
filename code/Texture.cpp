@@ -31,6 +31,16 @@ void Texture::unbind()
 	glBindTexture(type, 0);
 }
 
+void Texture::bind(int stage)
+{
+	glBindMultiTextureEXT( stage, type, id );
+}
+
+void Texture::unbind(int stage)
+{
+	glBindMultiTextureEXT( stage, type, 0 );
+}
+
 void Texture::copyData(const void *data, unsigned int w, unsigned int h,
 					   GLuint format, GLuint internalFormat,
 					   GLuint byteType)
