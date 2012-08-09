@@ -51,7 +51,7 @@ void ReadHeight(out mat3 mHeight)
 	mHeight[2] = textureGatherOffsets( unHeightMap, vTexcoord, ivec2[]( ivec2(-1,-1), ivec2(0,-1), ivec2(1,-1), ivec2(2,-1) ) ).rgb;
 }
 
-vec3 GetNormal(in mat3 mHeight)
+vec3 GenNormal(in mat3 mHeight)
 {
 	vec3	normal = vec3(0.0);
 	vec3	scale = vec3( unGridScale, unGridScale, unHeightScale );

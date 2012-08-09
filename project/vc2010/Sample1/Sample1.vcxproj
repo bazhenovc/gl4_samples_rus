@@ -14,8 +14,8 @@
     <ClCompile Include="..\..\..\samples\sample1\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\samples\sample1\modes.cpp" />
-    <ClInclude Include="..\..\..\samples\sample1\program.cpp" />
+    <ClInclude Include="..\..\..\samples\sample1\modes.h" />
+    <ClInclude Include="..\..\..\samples\sample1\program.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4A0390E2-29DE-4346-947F-209FB15328D5}</ProjectGuid>
@@ -59,7 +59,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../../bin</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../bin;../../../lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glew32.lib;framework_d.lib;dds_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -80,7 +80,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../../bin</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../bin;../../../lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glew32.lib;framework.lib;dds.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

@@ -315,6 +315,8 @@ bool Shader::loadShaders(const char *fileName)
 	char *	data = filetobuf( fileName );
 	std::string	src = data;
 	free(data);
+	
+	logPrint("loading program: %s\n", fileName);
 
 	size_t	offsets[ COUNTOF(shaderTypes) ] = {0};
 
@@ -330,7 +332,7 @@ bool Shader::loadShaders(const char *fileName)
 		if ( offsets[i] != size_t(-1) && shaderTypes[i].type != 0 )
 			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type );
 	}
-
+	
 	return link();
 }
 

@@ -5,6 +5,15 @@
 
 #include <string>
 
+enum ETextureType
+{
+	TEX_DIFFUSE	= 0,
+	TEX_NORMAL,
+	TEX_HEIGHT,
+	TEX_DEPTH,
+};
+
+
 /*
 	Helper for program loading, and uniform setting
 */
@@ -31,11 +40,11 @@ public:
 
 	void setConstUniforms(Shader *shader) const;
 
-	void setUniforms(Shader *shader) const;
+	void setUniforms(Shader *shader);
 
 	bool load(Shader *&shader, const char *fileName) const;
 
-	void bind(Shader *shader) const;
+	void bind(Shader *shader);
 };
 
 
@@ -71,14 +80,17 @@ inline size_t count_of(const T (&)[I]) {
 
 void Program::setConstUniforms(Shader *shader) const
 {
-	shader->setTexture( shader->getLoc("unDiffuseMap"), 0 );
-	shader->setTexture( shader->getLoc("unHeightMap"), 1 );
-	shader->setTexture( shader->getLoc("unNormalMap"), 2 );
+	shader->setTexture( shader->getLoc("unDiffuseMap"),	TEX_DIFFUSE );
+	shader->setTexture( shader->getLoc("unHeightMap"),	TEX_HEIGHT );
+	shader->setTexture( shader->getLoc("unNormalMap"),	TEX_NORMAL );
+	shader->setTexture( shader->getLoc("unDepthMap"),	TEX_DEPTH );
 }
 
-void Program::setUniforms(Shader *shader) const
+void Program::setUniforms(Shader *shader)
 {
-	shader->setUniformMatrix( "unMVPMatrix",					_states.mvp );
+	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
+
+	shader->setUniformMatrix( "unMVPMatrix",						_states.mvp );
 	shader->setUniformFloat( shader->getLoc("unGridScale"),		_states.gridScale );
 	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	_states.maxTessLevel );
 	shader->setUniformFloat( shader->getLoc("unHeightScale"),	_states.heightScale );
@@ -97,7 +109,7 @@ bool Program::load(Shader *&shader, const char *fileName) const
 	return true;
 }
 
-void Program::bind(Shader *shader) const
+void Program::bind(Shader *shader)
 {
 	glPatchParameteri( GL_PATCH_VERTICES, shader->getPatchSize() );
 	shader->bind();

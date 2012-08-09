@@ -1,3 +1,10 @@
+enum EViewIndex
+{
+	VIEW_COLOR	= 0,
+	VIEW_NORMAL,
+	VIEW_TESS,
+};
+
 
 class View
 {
@@ -29,28 +36,28 @@ public:
 
 	void init()
 	{
-		program->load( _viewColor,	"view_color.prg" );
-		program->load( _viewNormal,	"view_normal.prg" );
-		program->load( _viewTess,	"view_tesslevel.prg" );
+		program->load( _viewColor,	"shaders/view_color.prg" );
+		program->load( _viewNormal,	"shaders/view_normal.prg" );
+		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
 
 		if ( !_colorTarget )
-			_colorTarget = new Texture( GL_TEXTURE_2D );
+			_colorTarget  = new Texture( GL_TEXTURE_2D );
 		
 		if ( !_normalTarget )
 			_normalTarget = new Texture( GL_TEXTURE_2D );
 		
 		if ( !_depthTarget )
-			_depthTarget = new Texture( GL_TEXTURE_2D );
+			_depthTarget  = new Texture( GL_TEXTURE_2D );
 
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 		
 		_colorTarget->bind();
-		_colorTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
+		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
 		_normalTarget->bind();
 		_normalTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
 		_depthTarget->bind();
-		_depthTarget->copyData( NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
+		_depthTarget->copyData(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
 		_depthTarget->unbind();
 
 		_fbo->bind();
@@ -74,18 +81,23 @@ public:
 
 	void draw(int i)
 	{
-		Shader *	shader = (&_viewColor)[i%3];	// hack!
+		Shader *	shader = NULL;
+
+		if ( i == VIEW_COLOR )		shader = _viewColor;
+		if ( i == VIEW_NORMAL )		shader = _viewNormal;
+		if ( i == VIEW_TESS )		shader = _viewTess;
+
 		program->bind( shader );
 
-		_colorTarget->bind( 0 );
-		_normalTarget->bind( 1 );
-		_depthTarget->bind( 3 );
+		_colorTarget->bind(  TEX_DIFFUSE );
+		_normalTarget->bind( TEX_NORMAL );
+		_depthTarget->bind(  TEX_DEPTH );
 
 		fullScreenQuad->draw();
 		
-		_depthTarget->unbind( 3 );
-		_normalTarget->unbind( 1 );
-		_colorTarget->unbind( 0 );
+		_depthTarget->unbind(  TEX_DEPTH );
+		_normalTarget->unbind( TEX_NORMAL );
+		_colorTarget->unbind(  TEX_DIFFUSE );
 	}
 };
 
@@ -116,7 +128,7 @@ public:
 
 	void load()
 	{
-		program->load( _shader, "tess_quad_disp.prg" );
+		program->load( _shader, "shaders/tess_quad_disp.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
 	}
 
@@ -129,8 +141,8 @@ public:
 	{
 		program->bind( _shader );
 
-		diffuseMap->bind( 0 );
-		heightMap->bind( 1 );
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
 
 		gridMesh->draw();
 	}
@@ -155,8 +167,8 @@ public:
 
 	void load()
 	{
-		program->load( _shaderTessTri,  "tess_tri_rnd_level.prg" );
-		program->load( _shaderTessQuad, "tess_quad_rnd_level.prg" );
+		program->load( _shaderTessTri,  "shaders/tess_tri_rnd_level.prg" );
+		program->load( _shaderTessQuad, "shaders/tess_quad_rnd_level.prg" );
 	}
 
 	void unload()
@@ -188,8 +200,8 @@ public:
 		program->bind( shader );
 		shader->setUniformInt( shader->getLoc("unIncorrectMode"), !!(i & 1) );
 		
-		diffuseMap->bind( 0 );
-		heightMap->bind( 1 );
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
 
 		gridMesh->draw();
 	}
@@ -215,8 +227,8 @@ public:
 
 	void load()
 	{
-		program->load( _tessShader, "tess_quad_level_tex.prg" );
-		program->load( _genShader,  "gen_normal_and_tesslvl.prg" );
+		program->load( _tessShader, "shaders/tess_quad_level_tex.prg" );
+		program->load( _genShader,  "shaders/gen_normal_and_tesslvl.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
 
 		if ( !_fbo )
@@ -249,13 +261,13 @@ public:
 		{
 			program->bind( _tessShader );
 			
-			diffuseMap->bind( 0 );
-			heightMap->bind( 1 );
-			_renderTarget->bind( 2 );
+			diffuseMap->bind( TEX_DIFFUSE );
+			heightMap->bind(  TEX_HEIGHT );
+			_renderTarget->bind( TEX_NORMAL );
 
 			gridMesh->draw();
 
-			_renderTarget->unbind( 2 );
+			_renderTarget->unbind( TEX_NORMAL );
 
 		}
 		else
@@ -271,7 +283,7 @@ public:
 
 			program->bind( _genShader );
 
-			heightMap->bind( 1 );
+			heightMap->bind( TEX_HEIGHT );
 
 			fullScreenQuad->draw();
 
@@ -302,7 +314,7 @@ public:
 
 	void load()
 	{
-		program->load( _shader, "tess_quad_distance_lods.prg" );
+		program->load( _shader, "shaders/tess_quad_distance_lods.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
 	}
 
@@ -314,9 +326,9 @@ public:
 	void draw(int)
 	{
 		program->bind( _shader );
-
-		diffuseMap->bind( 0 );
-		heightMap->bind( 1 );
+		
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
 		
 		gridMesh->draw();
 	}
@@ -339,7 +351,7 @@ public:
 
 	void load()
 	{
-		program->load( _shader, "tess_tri_screenspace_lods.prg" );
+		program->load( _shader, "shaders/tess_tri_screenspace_lods.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 3 );
 	}
 
@@ -351,9 +363,9 @@ public:
 	void draw(int)
 	{
 		program->bind( _shader );
-
-		diffuseMap->bind( 0 );
-		heightMap->bind( 1 );
+		
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
 		
 		gridMesh->draw();
 	}
@@ -377,8 +389,8 @@ public:
 
 	void load()
 	{
-		program->load( _shaderDist, "tess_quad_distance_lods_culling.prg" );
-		program->load( _shaderScreenSpace, "tess_quad_screenspace_lods_culling.prg" );
+		program->load( _shaderDist, "shaders/tess_quad_distance_lods_culling.prg" );
+		program->load( _shaderScreenSpace, "shaders/tess_quad_screenspace_lods_culling.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
 	}
 
@@ -393,9 +405,9 @@ public:
 		Shader *	shader = (i & 1) ? _shaderDist : _shaderScreenSpace;
 
 		program->bind( shader );
-
-		diffuseMap->bind( 0 );
-		heightMap->bind( 1 );
+		
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
 		
 		gridMesh->draw();
 	}

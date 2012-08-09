@@ -7,11 +7,12 @@
 
 layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
-uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unHeightScale	= 10.0;
-uniform float	unDetailLevel	= 1000.0;
-uniform mat4	unMVPMatrix;
+uniform float		unGridScale		= 100.0;
+uniform float		unMaxTessLevel	= 32.0;
+uniform float		unHeightScale	= 10.0;
+uniform float		unDetailLevel	= 1000.0;
+uniform mat4		unMVPMatrix;
+uniform sampler2D	unHeightMap;
 
 out	TVertData {
 	vec3	vNormal;
@@ -119,15 +120,15 @@ out	TEvalData {
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return ( height * 0.1 );
 }
 	

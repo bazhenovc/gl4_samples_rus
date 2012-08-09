@@ -65,7 +65,7 @@ void main()
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
 	Output[I].vTexcoord0	= Input[I].vTexcoord0;
-	Output[I].Texcoord1		= Input[I].vTexcoord1;
+	Output[I].vTexcoord1	= Input[I].vTexcoord1;
 }
 
 
@@ -103,15 +103,15 @@ out	TEvalData {
 float PCF(in vec2 vTexcoord)
 {
 	float	height = 0.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ) * 2.0;
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) );
-	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) );
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2(-1, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 0) ).r * 2.0;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 0, 1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1,-1) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 0) ).r;
+	height += textureOffset( unHeightMap, vTexcoord, ivec2( 1, 1) ).r;
 	return ( height * 0.1 );
 }
 	
@@ -122,7 +122,7 @@ void main()
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
 	vec4	texdata		= texture( unNormalMap, texc );
 	Output.vNormal		= texdata.rgb * 2.0 - 1.0;
-	Output.fLevel		= texdata * unMaxTessLevel;
+	Output.fLevel		= texdata.a * unMaxTessLevel;
 	
 	pos.xyz += PCF( texc ) * vec3(0.0, 0.0, 1.0) * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
@@ -150,7 +150,7 @@ void main(void)
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= fLevel;
+	outNormal.a		= Input.fLevel;
 }
 
 --eof
