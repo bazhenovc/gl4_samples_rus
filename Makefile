@@ -28,7 +28,7 @@ libdds_objs := $(patsubst $(libdds_dir)/%.c,build/%.c.o,$(libdds_srcs))
 
 # samples
 samples_srcs := $(shell find $(samples_dir) -type f -name "*.cpp")
-samples_objs := $(patsubst $(samples_dir)/%.cpp,%,$(samples_srcs))
+samples_objs := $(patsubst $(samples_dir)/%/main.cpp,%,$(samples_srcs))
 
 .PHONY: all clean framework libdds.so test
 
@@ -48,7 +48,8 @@ clean:
 	rm build/*
 	rm libframework.so
 	rm libdds.so
-	rm $(samples_objs)
+	rm basic
+	rm sample1
 
 -include $(framework_deps)
 -include $(libdds_deps)
@@ -61,6 +62,6 @@ build/%.c.o: $(libdds_dir)/%.c Makefile
 	@echo 'CC $< -> $@'
 	@gcc $(cflags) -MD -MMD -MP -c $< -o $@
 
-%: $(samples_dir)/%.cpp $(framework_hdrs) Makefile
+%: $(samples_dir)/%/main.cpp $(framework_hdrs) Makefile
 	@echo 'CCLD $< -> $@'
 	@g++ $(cflags) $(ldflags) -lframework $< -o $@

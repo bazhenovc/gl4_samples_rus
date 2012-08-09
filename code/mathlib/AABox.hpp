@@ -5,7 +5,7 @@
 #ifndef _INC_MATHLIB_AABOX_HPP
 #define _INC_MATHLIB_AABOX_HPP
 
-#include <mathlib/Vector3.hpp>
+#include <mathlib/glm::vec3.hpp>
 
 namespace framework
 {
