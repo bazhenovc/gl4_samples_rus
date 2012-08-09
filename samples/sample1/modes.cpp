@@ -13,7 +13,7 @@ private:
 public:
 	View():
 		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL),
-		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL)
+		_colorTarget(NULL), _normalTarget(NULL), _fbo(NULL), _depthTarget(NULL)
 	{}
 
 	~View()
@@ -35,16 +35,16 @@ public:
 
 		if ( !_colorTarget )
 			_colorTarget = new Texture( GL_TEXTURE_2D );
-
+		
 		if ( !_normalTarget )
 			_normalTarget = new Texture( GL_TEXTURE_2D );
-
+		
 		if ( !_depthTarget )
 			_depthTarget = new Texture( GL_TEXTURE_2D );
 
 		if ( !_fbo )
 			_fbo = new Framebuffer();
-
+		
 		_colorTarget->bind();
 		_colorTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
 		_normalTarget->bind();
@@ -82,7 +82,7 @@ public:
 		_depthTarget->bind( 3 );
 
 		fullScreenQuad->draw();
-
+		
 		_depthTarget->unbind( 3 );
 		_normalTarget->unbind( 1 );
 		_colorTarget->unbind( 0 );
@@ -184,10 +184,10 @@ public:
 		if ( regenerate ) {
 			gridMesh->createGrid( gridSize, 1.f / float(gridSize), _patchSize );
 		}
-
+		
 		program->bind( shader );
 		shader->setUniformInt( shader->getLoc("unIncorrectMode"), !!(i & 1) );
-
+		
 		diffuseMap->bind( 0 );
 		heightMap->bind( 1 );
 
@@ -221,7 +221,7 @@ public:
 
 		if ( !_fbo )
 			_fbo = new Framebuffer();
-
+		
 		if ( !_renderTarget )
 			_renderTarget = new Texture( GL_TEXTURE_2D );
 
@@ -248,7 +248,7 @@ public:
 		if ( i == 0 )
 		{
 			program->bind( _tessShader );
-
+			
 			diffuseMap->bind( 0 );
 			heightMap->bind( 1 );
 			_renderTarget->bind( 2 );
@@ -262,7 +262,7 @@ public:
 		{
 			// generate normal and tess level map
 			_fbo->bind();
-
+			
 			glDepthMask( GL_FALSE );
 			glDisable( GL_DEPTH_TEST );
 
@@ -317,7 +317,7 @@ public:
 
 		diffuseMap->bind( 0 );
 		heightMap->bind( 1 );
-
+		
 		gridMesh->draw();
 	}
 };
@@ -354,7 +354,7 @@ public:
 
 		diffuseMap->bind( 0 );
 		heightMap->bind( 1 );
-
+		
 		gridMesh->draw();
 	}
 };
@@ -396,7 +396,7 @@ public:
 
 		diffuseMap->bind( 0 );
 		heightMap->bind( 1 );
-
+		
 		gridMesh->draw();
 	}
 };
