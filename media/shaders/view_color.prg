@@ -25,12 +25,17 @@ void main()
 layout(location = 0) out vec4	outColor;
 
 uniform sampler2D	unDiffuseMap;
+uniform sampler2D	unNormalMap;
 
 in vec2		vTexcoord;
 
 void main()
 {
+	const vec3	const_norm 	= normalize( vec3( 0.f, 0.5f, 1.f ) );
+	vec3		norm 		= texture( unNormalMap, vTexcoord ).rgb * 2.0 - 1.0;
+	
 	outColor = texture( unDiffuseMap, vTexcoord );
+	outColor.rgb *= cross( norm, const_norm );
 	outColor.a = 1.0;
 }
 

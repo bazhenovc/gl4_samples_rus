@@ -46,7 +46,7 @@ void init()
 	shader->loadShaders(RESOURCE_PATH"media/shaders/basic.prg");
 
 	texture = new Texture(GL_TEXTURE_2D);
-	texture->loadDDS("media/textures/rockwall.dds");
+	texture->loadDDS(RESOURCE_PATH"media/textures/rockwall.dds");
 }
 
 void shutdown()
@@ -61,13 +61,13 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	if (keys['w'])
-		cam.move(1);
+		cam.move(0.1f);
 	if (keys['s'])
-		cam.move(-1);
+		cam.move(-0.1f);
 	if (keys['a'])
-		cam.rotate(1);
+		cam.rotate(0.1f);
 	if (keys['d'])
-		cam.rotate(-1);
+		cam.rotate(-0.1f);
 
 	texture->bind();
 

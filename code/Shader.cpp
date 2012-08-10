@@ -289,13 +289,15 @@ bool Shader::link()
 
 	// Load program log
 	GLint logLen;
+	GLint linkStatus;
 	GLsizei chars;
 	GLchar* infoLog;
+	glGetProgramiv(_prog, GL_LINK_STATUS, &linkStatus);
 	glGetProgramiv(_prog, GL_INFO_LOG_LENGTH, &logLen);
 	if (logLen > 1) {
 		infoLog = (GLchar*) malloc(logLen * sizeof ( GLchar));
 		glGetProgramInfoLog(_prog, logLen, &chars, infoLog);
-		logPrint("GLSL compilation error: %s\n", infoLog);
+		logPrint("GLSL compilation %s: %s\n", (linkStatus ? "message" : "error"), infoLog);
 		free(infoLog);
 		return false;
 	}

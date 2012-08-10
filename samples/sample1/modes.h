@@ -16,6 +16,7 @@ private:
 				*	_normalTarget,
 				*	_depthTarget;
 	Framebuffer *	_fbo;
+	glm::mat4		_ortho;
 
 public:
 	View():
@@ -36,6 +37,8 @@ public:
 
 	void init()
 	{
+		_ortho = glm::ortho( -1.f, 1.f, -1.f, 1.f );
+
 		program->load( _viewColor,	"shaders/view_color.prg" );
 		program->load( _viewNormal,	"shaders/view_normal.prg" );
 		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
@@ -72,6 +75,7 @@ public:
 		_fbo->bind();
 		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
 		glViewport( 0, 0, scrWidth, scrHeight );
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void unbind()
@@ -83,9 +87,12 @@ public:
 	{
 		Shader *	shader = NULL;
 
-		if ( i == VIEW_COLOR )		shader = _viewColor;
-		if ( i == VIEW_NORMAL )		shader = _viewNormal;
-		if ( i == VIEW_TESS )		shader = _viewTess;
+		if ( i == VIEW_COLOR )		shader = _viewColor;	else
+		if ( i == VIEW_NORMAL )		shader = _viewNormal;	else
+		if ( i == VIEW_TESS )		shader = _viewTess;		else
+									return;
+
+		program->getStates().mvp = _ortho;
 
 		program->bind( shader );
 
@@ -244,7 +251,27 @@ public:
 
 		_fbo->bind();
 		_fbo->attach( _renderTarget, GL_COLOR_ATTACHMENT0 );
+
+		// generate normal and tess level map
+		glDepthMask( GL_FALSE );
+		glDisable( GL_DEPTH_TEST );
+
+		glDrawBuffer( GL_COLOR_ATTACHMENT0 );
+		glViewport( 0, 0, heightMap->getWidth(), heightMap->getHeight() );
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		program->bind( _genShader );
+
+		heightMap->bind( TEX_HEIGHT );
+
+		fullScreenQuad->draw();
+
 		_fbo->unbind();
+
+		glDepthMask( GL_TRUE );
+		glEnable( GL_DEPTH_TEST );
+		glDrawBuffer( GL_BACK );
+		glViewport( 0, 0, scrWidth, scrHeight );
 	}
 
 	void unload()
@@ -255,45 +282,17 @@ public:
 		delete _fbo;			_fbo = NULL;
 	}
 
-	void draw(int i)
+	void draw(int)
 	{
-		if ( i == 0 )
-		{
-			program->bind( _tessShader );
+		program->bind( _tessShader );
 
-			diffuseMap->bind( TEX_DIFFUSE );
-			heightMap->bind(  TEX_HEIGHT );
-			_renderTarget->bind( TEX_NORMAL );
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
+		_renderTarget->bind( TEX_NORMAL );
 
-			gridMesh->draw();
+		gridMesh->draw();
 
-			_renderTarget->unbind( TEX_NORMAL );
-
-		}
-		else
-		{
-			// generate normal and tess level map
-			_fbo->bind();
-
-			glDepthMask( GL_FALSE );
-			glDisable( GL_DEPTH_TEST );
-
-			glDrawBuffer( GL_COLOR_ATTACHMENT0 );
-			glViewport( 0, 0, heightMap->getWidth(), heightMap->getHeight() );
-
-			program->bind( _genShader );
-
-			heightMap->bind( TEX_HEIGHT );
-
-			fullScreenQuad->draw();
-
-			_fbo->unbind();
-
-			glDepthMask( GL_TRUE );
-			glEnable( GL_DEPTH_TEST );
-			glDrawBuffer( GL_BACK );
-			glViewport( 0, 0, scrWidth, scrHeight );
-		}
+		_renderTarget->unbind( TEX_NORMAL );
 	}
 };
 

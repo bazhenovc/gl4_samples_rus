@@ -23,7 +23,7 @@ int			scrWidth		= 800,
 			scrHeight		= 600;
 int			gridSize		= 100;
 int			modeIndex		= 0;
-int			viewIndex		= 0;
+int			viewIndex		= VIEW_COLOR;
 
 #include "program.h"
 #include "modes.h"
