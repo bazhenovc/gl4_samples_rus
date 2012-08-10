@@ -33,12 +33,12 @@ void Texture::unbind()
 
 void Texture::bind(int stage)
 {
-	glBindMultiTextureEXT( stage, type, id );
+	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, id );
 }
 
 void Texture::unbind(int stage)
 {
-	glBindMultiTextureEXT( stage, type, 0 );
+	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, 0 );
 }
 
 void Texture::copyData(const void *data, unsigned int w, unsigned int h,

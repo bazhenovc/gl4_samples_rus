@@ -18,8 +18,8 @@ out	TVertData {
 
 void main()
 {
-	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
-	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
+	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
+	Output.vNormal		= vec3( 0.0, 1.0, 0.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
 }

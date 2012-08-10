@@ -86,17 +86,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\code\Camera.h" />
     <ClInclude Include="..\..\..\code\Framebuffer.h" />
     <ClInclude Include="..\..\..\code\HardwareBuffer.h" />
     <ClInclude Include="..\..\..\code\mathlib\AABox.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Frustum.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Math.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Matrix3.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Matrix4.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Quaternion.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Vector2.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Vector3.hpp" />
-    <ClInclude Include="..\..\..\code\mathlib\Vector4.hpp" />
     <ClInclude Include="..\..\..\code\Mesh.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Shader.h" />
@@ -104,6 +99,7 @@
     <ClInclude Include="..\..\..\code\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\code\Camera.cpp" />
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
     <ClCompile Include="..\..\..\code\HardwareBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Mesh.cpp" />

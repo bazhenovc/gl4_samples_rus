@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\samples\basic.cpp" />
+    <ClCompile Include="..\..\..\samples\basic\main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{16DA3A94-D4CA-47F9-BE45-706A143A18C9}</ProjectGuid>

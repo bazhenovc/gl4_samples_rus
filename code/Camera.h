@@ -34,6 +34,63 @@ public:
 	void rotateUp(float factor);
 };
 
+
+
+class FPSCamera
+{
+private:
+	glm::quat	_orientation;
+	glm::vec3	_position;
+	glm::mat4	_proj,
+				_view;
+
+public:
+	FPSCamera() {}
+
+	inline void init(float fovY, float aspect, float nearPlane, float farPlane, const glm::vec3 &pos = glm::vec3(0.f)) {
+		_proj = glm::perspective( fovY, aspect, nearPlane, farPlane );
+		_position = pos;
+	}
+
+	inline glm::mat4 toMatrix() const {
+		return _proj * _view * glm::translate( _position );
+	}
+
+	inline glm::vec3 const & position() const {
+		return _position;
+	}
+
+	inline void rotateRad(float x, float y) {
+		bool		changed = false;
+		glm::quat &	q = _orientation;
+
+		if ( y != 0.f ) {
+			q = glm::quat( cos(y*0.5f), sin(y*0.5f), 0.f, 0.f ) * q;
+			changed = true;
+		}
+
+		if ( x != 0.f ) {
+			q = q * glm::quat( cos(x*0.5f), 0.f, sin(x*0.5f), 0.f );
+			changed = true;
+		}
+
+		if ( changed ) {
+			q = glm::normalize( q );
+			_view = glm::mat4_cast( _orientation );
+		}
+	}
+
+	inline void rotate(float x, float y) {
+		rotateRad( glm::degrees(x), glm::degrees(y) );
+	}
+
+	inline void move(float x, float y, float z) {
+		_position += glm::vec3( _view[0][0], _view[1][0], _view[2][0] ) * -y;
+		_position += glm::vec3( 0.f, 1.f, 0.f ) * z;
+		_position += glm::vec3( _view[0][2], _view[1][2], _view[2][2] ) * x;
+	}
+};
+
 }
 
 #endif // CAMERA_HH

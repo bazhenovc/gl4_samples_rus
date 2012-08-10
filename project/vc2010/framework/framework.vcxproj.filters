@@ -15,24 +15,6 @@
     <ClInclude Include="..\..\..\code\mathlib\Math.hpp">
       <Filter>mathlib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Matrix3.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Matrix4.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Quaternion.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Vector2.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Vector3.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\mathlib\Vector4.hpp">
-      <Filter>mathlib</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\code\Framebuffer.h" />
     <ClInclude Include="..\..\..\code\HardwareBuffer.h" />
     <ClInclude Include="..\..\..\code\Mesh.h" />
@@ -40,6 +22,7 @@
     <ClInclude Include="..\..\..\code\Vertex.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
+    <ClInclude Include="..\..\..\code\Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
@@ -48,5 +31,6 @@
     <ClCompile Include="..\..\..\code\Shader.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />
+    <ClCompile Include="..\..\..\code\Camera.cpp" />
   </ItemGroup>
 </Project>

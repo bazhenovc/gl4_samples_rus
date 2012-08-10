@@ -25,8 +25,7 @@ Mesh* mesh = 0;
 Shader* shader = 0;
 Texture* texture = 0;
 
-glm::mat4 mvp;
-Camera cam;
+FPSCamera cam;
 glm::vec2 mousePos;
 
 bool keys[512];
@@ -35,9 +34,7 @@ void init()
 {
 	memset(keys, 0, 512 * sizeof(bool));
 
-	mvp = glm::perspective(60.0f, 800.0f / 600.0f, 0.00001f, 3000.0f);
-	cam.pos = glm::vec3(0, 0, -10);
-	cam.target = glm::vec3(0, 0, -1);
+	cam.init(60.0f, 800.0f / 600.0f, 0.1f, 3000.0f);
 
 	mesh = new Mesh;
 	mesh->fromFile( RESOURCE_PATH"media/torus.e2m" );
@@ -46,7 +43,7 @@ void init()
 	shader->loadShaders(RESOURCE_PATH"media/shaders/basic.prg");
 
 	texture = new Texture(GL_TEXTURE_2D);
-	texture->loadDDS("media/textures/rockwall.dds");
+	texture->loadDDS(RESOURCE_PATH"media/textures/rockwall.dds");
 }
 
 void shutdown()
@@ -60,19 +57,12 @@ void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if (keys['w'])
-		cam.move(1);
-	if (keys['s'])
-		cam.move(-1);
-	if (keys['a'])
-		cam.rotate(1);
-	if (keys['d'])
-		cam.rotate(-1);
+	cam.move( (keys['w'] - keys['s']) * 0.1f, (keys['d'] - keys['a']) * 0.1f, 0.f );
 
-	texture->bind();
+	texture->bind(0);
 
 	shader->bind();
-	shader->setUniformMatrix("mvp", mvp * cam.toMatrix());
+	shader->setUniformMatrix("mvp", cam.toMatrix());
 	shader->setTexture("diffuse", 0);
 	{
 		mesh->draw();
@@ -113,8 +103,7 @@ void mouseMotion(int x, int y)
 
 	glm::vec2 delta = newMousePos - mousePos;
 
-	cam.rotate(-delta.x / 2);
-	cam.rotateUp(-delta.y / 2);
+	cam.rotate( delta.x * 0.0001f, delta.y * 0.0001f );
 
 	mousePos = newMousePos;
 }
