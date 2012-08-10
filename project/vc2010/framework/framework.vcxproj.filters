@@ -23,6 +23,7 @@
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
     <ClInclude Include="..\..\..\code\Camera.h" />
+    <ClInclude Include="..\..\..\code\Input.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
@@ -32,5 +33,6 @@
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />
     <ClCompile Include="..\..\..\code\Camera.cpp" />
+    <ClCompile Include="..\..\..\code\Input.cpp" />
   </ItemGroup>
 </Project>

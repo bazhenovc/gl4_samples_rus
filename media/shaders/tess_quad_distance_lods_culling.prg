@@ -38,8 +38,8 @@ float Level(float dist)
 
 void main()
 {
-	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
-	Output.vNormal		= vec3( 0.0, 0.0, 1.0 );
+	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
+	Output.vNormal		= vec3( 0.0, 1.0, 0.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
 	vec4	pos			= unMVPMatrix * vec4( gl_Position.xyz +
@@ -136,6 +136,7 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
+uniform sampler2D	unNormalMap;
 uniform float		unHeightScale	= 10.0;
 
 in TContData {
@@ -176,11 +177,13 @@ float PCF(in vec2 vTexcoord)
 void main()
 {
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
-	Output.vNormal 		= Interpolate( Input, .vNormal );
+	vec3	norm 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
+	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
+	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
 	
-	pos.xyz += PCF( texc ) * Output.vNormal * unHeightScale;
+	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
 }
 
@@ -193,6 +196,7 @@ layout(location = 0) out vec4	outColor;
 layout(location = 1) out vec4	outNormal;
 
 uniform sampler2D	unDiffuseMap;
+uniform float		unMaxTessLevel;
 
 in	TEvalData {
 	vec3	vNormal;
@@ -206,7 +210,7 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= Input.fLevel;
+	outNormal.a		= Input.fLevel / unMaxTessLevel;
 }
 
 --eof

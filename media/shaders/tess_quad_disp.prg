@@ -77,6 +77,7 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
+uniform sampler2D	unNormalMap;
 uniform float		unHeightScale	= 10.0;
 
 in TContData {
@@ -115,11 +116,12 @@ float PCF(in vec2 vTexcoord)
 void main()
 {
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
-	Output.vNormal 		= Interpolate( Input, .vNormal );
+	vec3	norm 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
+	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
 	
-	pos.xyz += PCF( texc ) * Output.vNormal * unHeightScale;
+	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
 }
 
@@ -144,7 +146,7 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= 0.0;	// empty
+	outNormal.a		= 1.0;
 }
 
 --eof

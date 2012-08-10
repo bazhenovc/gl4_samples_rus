@@ -6,6 +6,7 @@
 #include "Texture.h"
 #include "Framebuffer.h"
 #include "Camera.h"
+#include "Input.h"
 
 using namespace framework;
 
@@ -18,17 +19,16 @@ View *		currentView		= NULL;
 Mesh *		gridMesh		= NULL;
 Mesh *		fullScreenQuad	= NULL;
 Texture *	diffuseMap		= NULL,
-		*	heightMap		= NULL;
+		*	heightMap		= NULL,
+		*	normalMap		= NULL;
 Program *	program			= NULL;
+Input		input;
 int			scrWidth		= 800,
 			scrHeight		= 600;
 int			gridSize		= 100;
 int			modeIndex		= 0;
 FPSCamera	cam;
-glm::vec2	mousePos;
 bool		wireframe		= false;
-
-bool keys[512];
 
 #include "program.h"
 #include "modes.h"
@@ -37,19 +37,12 @@ int			viewIndex  = VIEW_COLOR;
 Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(),
 							new Part4(), new Part5(), new Part6() };
 
-// temp
-Mesh* mesh = 0;
-Shader* shader = 0;
-
 
 void init()
 {
 	setResourceDirectory( "media" );
 	
-	memset(keys, 0, 512 * sizeof(bool));
-	
-	// -34.8, -7.9, -42.4
-	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-35.f, -8.f, -42.f) );
+	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-200.f, -30.f, -200.f) );
 
 	gridMesh		= new Mesh();
 
@@ -59,14 +52,11 @@ void init()
 
 	diffuseMap		= new Texture( GL_TEXTURE_2D );
 	heightMap		= new Texture( GL_TEXTURE_2D );
+	normalMap		= new Texture( GL_TEXTURE_2D );
 
-	diffuseMap->bind();
 	diffuseMap->loadDDS( "textures/rockwall.dds" );
-	diffuseMap->unbind();
-
-	heightMap->bind();
-	heightMap->loadDDS( "textures/height-map.dds" );
-	heightMap->unbind();
+	heightMap->loadDDS(  "textures/rockwall.dds" );
+	normalMap->loadDDS(  "textures/rockwall.dds" );
 
 	program			= new Program();
 
@@ -75,13 +65,6 @@ void init()
 
 	currentView->init();
 	currentMode->load();
-
-	// temp:
-	mesh = new Mesh;
-	mesh->fromFile( "torus.e2m" );
-
-	shader = new Shader;
-	shader->loadShaders("shaders/basic.prg");
 }
 
 void shutdown()
@@ -98,41 +81,70 @@ void shutdown()
 	delete heightMap;
 	delete program;
 	delete currentView;
+}
 
-	// temp:
-	delete mesh;
-	delete shader;
+void reload(int i)
+{
+	currentMode->unload();
+	currentMode = allModes[ i ];
+	currentMode->load();
+	modeIndex = 0;
+
+	static char	buf[512];
+	sprintf( buf, "Sample1, part%i", i+1 );
+	glutSetWindowTitle( buf );
 }
 
 void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	if ( input.isKey(27) )		exit(0);
+
 	// + -
-	if ( keys['+'] )	program->getStates().maxTessLevel++;
-	if ( keys['-'] )		program->getStates().maxTessLevel--;
+	if ( input.isKey('=') )		program->getStates().maxTessLevel += 0.05f;
+	if ( input.isKey('-') )		program->getStates().maxTessLevel -= 0.05f;
 
 	// < >
-	if ( keys[','] )	program->getStates().detailLevel += 50.f;
-	if ( keys['.'] )	program->getStates().detailLevel -= 50.f;
+	if ( input.isKey(',') )		program->getStates().detailLevel -= 2.f;
+	if ( input.isKey('.') )		program->getStates().detailLevel += 2.f;
 
 	// [ ]
-	if ( keys['['] )	program->getStates().heightScale += 10.f;
-	if ( keys[']'] )	program->getStates().heightScale -= 10.f;
+	if ( input.isKey('[') )		program->getStates().heightScale += 0.1f;
+	if ( input.isKey(']') )		program->getStates().heightScale -= 0.1f;
 
 	// ( )
-	if ( keys['9'] && modeIndex > 0 )	modeIndex--;
-	if ( keys['0'] && modeIndex < 6 )	modeIndex++;
+	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
+	if ( input.isKeyClick('0') && modeIndex < 6 )	modeIndex++;
 
-	if ( keys['r'] )	currentMode->load();			// reload
+	if ( input.isKeyClick('r') )	{ currentMode->unload();  currentMode->load(); }			// reload
 
-	if ( keys['c'] )	viewIndex = VIEW_COLOR;		// view color map
-	if ( keys['n'] )	viewIndex = VIEW_NORMAL;	// view normal map
-	if ( keys['t'] )	viewIndex = VIEW_TESS;		// view tess level map
+	if ( input.isKeyClick('c') )	viewIndex = VIEW_COLOR;		// view color map
+	if ( input.isKeyClick('n') )	viewIndex = VIEW_NORMAL;	// view normal map
+	if ( input.isKeyClick('t') )	viewIndex = VIEW_TESS;		// view tess level map
 
-	if ( keys['p'] )	wireframe = !wireframe;
+	if ( input.isKeyClick('p') )	wireframe = !wireframe;
 	
-	cam.move( (keys['w'] - keys['s']) * 0.1f, (keys['d'] - keys['a']) * 0.1f, 0.f );
+	// 1..4
+	if ( input.isKey('1') )			modeIndex = 0;
+	if ( input.isKey('2') )			modeIndex = 1;
+	if ( input.isKey('3') )			modeIndex = 2;
+	if ( input.isKey('4') )			modeIndex = 3;
+
+	// F1..F6
+	if ( input.isKeyClick(GLUT_KEY_F1) )	reload( 0 );
+	if ( input.isKeyClick(GLUT_KEY_F2) )	reload( 1 );
+	if ( input.isKeyClick(GLUT_KEY_F3) )	reload( 2 );
+	if ( input.isKeyClick(GLUT_KEY_F4) )	reload( 3 );
+	if ( input.isKeyClick(GLUT_KEY_F5) )	reload( 4 );
+	if ( input.isKeyClick(GLUT_KEY_F6) )	reload( 5 );
+	
+	cam.rotate( input.mouseDelta() * 0.0001f );
+	input.resetMouseDelta();
+
+	cam.move(	(input.isKey('w') - input.isKey('s')) * 0.25f,
+				(input.isKey('d') - input.isKey('a')) * 0.25f,
+				(input.isKey('q') - input.isKey('e')) * 0.25f );
 
 	program->getStates().mvp = cam.toMatrix();
 
@@ -157,51 +169,6 @@ void reshape(int w, int h)
 	currentView->init();
 }
 
-void keyDown(unsigned char key, int, int)
-{
-	if ( key == 27 )	exit(0);
-	
-	if (key < 512)
-		keys[key] = true;
-
-	// 1..8
-	if ( key >= '1' && key <= '8' )		modeIndex = key - '1';
-}
-
-void keyUp(unsigned char key, int, int)
-{
-	if (key < 512)
-		keys[key] = false;
-}
-
-void specialKeyDown(int key, int, int)
-{
-	// F1...F6
-	if ( key >= GLUT_KEY_F1 && key < GLUT_KEY_F1 + count_of(allModes) )
-	{
-		currentMode->unload();
-		currentMode = allModes[ key - GLUT_KEY_F1 ];
-		currentMode->load();
-		modeIndex = 0;
-	}
-}
-
-void mouseDown(int button, int state, int x, int y)
-{
-	mousePos = glm::vec2((float)x, (float)y);
-}
-
-void mouseMotion(int x, int y)
-{
-	glm::vec2 newMousePos = glm::vec2((float)x, (float)y);
-
-	glm::vec2 delta = newMousePos - mousePos;
-	
-	cam.rotate( delta.x * 0.0001f, delta.y * 0.0001f );
-
-	mousePos = newMousePos;
-}
-
 int main(int argc, char** argv)
 {
 	atexit(shutdown);
@@ -211,14 +178,11 @@ int main(int argc, char** argv)
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 
-	glutCreateWindow("Sample1");
+	glutCreateWindow("Sample1, part1");
 	glutIdleFunc(display);
 	glutReshapeFunc(reshape);
-	glutSpecialUpFunc(specialKeyDown);
-	glutKeyboardFunc(keyDown);
-	glutKeyboardUpFunc(keyUp);
-	glutMouseFunc(mouseDown);
-	glutMotionFunc(mouseMotion);
+
+	input.init();
 
 	glewExperimental = GL_TRUE;
 	glewInit();

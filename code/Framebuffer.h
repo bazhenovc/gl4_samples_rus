@@ -88,6 +88,8 @@ public:
 	*/
 	void attach(RenderBuffer* buffer, GLuint attacment);
 
+	bool checkStatus();
+
 private:
 	//! fbo ID
 	GLuint _fbo;

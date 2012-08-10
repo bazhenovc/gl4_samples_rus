@@ -80,6 +80,10 @@ public:
 		}
 	}
 
+	inline void rotate(const glm::vec2 &v) {
+		rotate( v.x, v.y );
+	}
+
 	inline void rotate(float x, float y) {
 		rotateRad( glm::degrees(x), glm::degrees(y) );
 	}

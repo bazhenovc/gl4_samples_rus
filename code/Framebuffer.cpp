@@ -78,7 +78,8 @@ Texture* Framebuffer::createTexture(GLuint type, unsigned int width, unsigned in
 
 void Framebuffer::attach(Texture *texture, GLuint attachment)
 {
-	glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
+	//glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
+	glFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->getID(), 0 );
 }
 
 RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, unsigned int height)
@@ -90,6 +91,50 @@ RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, u
 void Framebuffer::attach(RenderBuffer *buffer, GLuint attacment)
 {
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, attacment, GL_RENDERBUFFER, buffer->getID());
+}
+
+bool Framebuffer::checkStatus()
+{
+	GLenum	status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+	switch ( status )
+	{
+		case GL_FRAMEBUFFER_COMPLETE :
+			return true;
+
+		case GL_FRAMEBUFFER_UNDEFINED :
+			logPrint( "Framebuffer: undefined\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT :
+			logPrint( "Framebuffer incomplete: Attachment is not complete\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT :
+			logPrint( "Framebuffer incomplete: No image is attached to FBO\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER :
+			logPrint( "Framebuffer incomplete: Draw buffer\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER :
+			logPrint( "Framebuffer incomplete: Read buffer\n" );
+			break;
+
+		case GL_FRAMEBUFFER_UNSUPPORTED :
+			logPrint( "Unsupported by FBO implementation\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE :
+			logPrint( "Framebuffer incomplete: Multisample\n" );
+			break;
+
+		case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS :
+			logPrint( "Framebuffer incomplete: Layer targets\n" );
+			break;
+	};
+	return false;
 }
 
 }

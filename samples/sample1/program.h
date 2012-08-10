@@ -28,7 +28,7 @@ public:
 		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(100.f), maxTessLevel(12.f), heightScale(10.f), detailLevel(500.f) {}
+		States(): gridScale(1000.f), maxTessLevel(12.f), heightScale(100.f), detailLevel(1500.f) {}
 	};
 
 private:
@@ -72,18 +72,14 @@ bool setResourceDirectory(const char *dirName, int maxSearchDepth = 4)
 }
 
 
-template <typename T, size_t I>
-inline size_t count_of(const T (&)[I]) {
-	return I;
-}
-
-
 void Program::setConstUniforms(Shader *shader) const
 {
+	shader->bind();
 	shader->setTexture( shader->getLoc("unDiffuseMap"),	TEX_DIFFUSE );
 	shader->setTexture( shader->getLoc("unHeightMap"),	TEX_HEIGHT );
 	shader->setTexture( shader->getLoc("unNormalMap"),	TEX_NORMAL );
 	shader->setTexture( shader->getLoc("unDepthMap"),	TEX_DEPTH );
+	shader->unbind();
 }
 
 void Program::setUniforms(Shader *shader)
@@ -93,7 +89,7 @@ void Program::setUniforms(Shader *shader)
 	shader->setUniformMatrix( "unMVPMatrix",						_states.mvp );
 	shader->setUniformFloat( shader->getLoc("unGridScale"),		_states.gridScale );
 	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	_states.maxTessLevel );
-	shader->setUniformFloat( shader->getLoc("unHeightScale"),	_states.heightScale );
+	shader->setUniformFloat( shader->getLoc("unHeightScale"),	-_states.heightScale );
 	shader->setUniformFloat( shader->getLoc("unDetailLevel"),	_states.detailLevel );
 }
 

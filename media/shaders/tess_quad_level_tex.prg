@@ -20,7 +20,7 @@ out	TVertData {
 
 void main()
 {
-	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 );
+	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
 	Output.fLevel		= clamp( texture( unNormalMap, Output.vTexcoord1 ).a * unMaxTessLevel,
@@ -124,7 +124,7 @@ void main()
 	Output.vNormal		= texdata.rgb * 2.0 - 1.0;
 	Output.fLevel		= texdata.a * unMaxTessLevel;
 	
-	pos.xyz += PCF( texc ) * vec3(0.0, 0.0, 1.0) * unHeightScale;
+	pos.xyz += PCF( texc ) * vec3(0.0, 1.0, 0.0) * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
 }
 
@@ -137,6 +137,7 @@ layout(location = 0) out vec4	outColor;
 layout(location = 1) out vec4	outNormal;
 
 uniform sampler2D	unDiffuseMap;
+uniform float		unMaxTessLevel;
 
 in	TEvalData {
 	vec3	vNormal;
@@ -150,7 +151,7 @@ void main(void)
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= Input.fLevel;
+	outNormal.a		= Input.fLevel / unMaxTessLevel;
 }
 
 --eof

@@ -16,6 +16,7 @@ private:
 				*	_normalTarget,
 				*	_depthTarget;
 	Framebuffer *	_fbo;
+	glm::mat4		_ortho;
 
 public:
 	View():
@@ -36,6 +37,8 @@ public:
 
 	void init()
 	{
+		_ortho = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );
+
 		program->load( _viewColor,	"shaders/view_color.prg" );
 		program->load( _viewNormal,	"shaders/view_normal.prg" );
 		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
@@ -52,43 +55,48 @@ public:
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
-		_colorTarget->bind();
 		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
-		_normalTarget->bind();
 		_normalTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
-		_depthTarget->bind();
 		_depthTarget->copyData(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
-		_depthTarget->unbind();
 
 		_fbo->bind();
 		_fbo->attach( _colorTarget, GL_COLOR_ATTACHMENT0 );
 		_fbo->attach( _normalTarget, GL_COLOR_ATTACHMENT1 );
 		_fbo->attach( _depthTarget, GL_DEPTH_ATTACHMENT );
+		_fbo->checkStatus();
 		_fbo->unbind();
 	}
 
 	void bind()
 	{
 		_fbo->bind();
-		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
+		const GLenum	targets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers( 2, targets );
+		//_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
 		glViewport( 0, 0, scrWidth, scrHeight );
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void unbind()
 	{
 		_fbo->unbind();
+		glDrawBuffer( GL_BACK );
 	}
 
 	void draw(int i)
 	{
 		Shader *	shader = NULL;
 
-		if ( i == VIEW_COLOR )		shader = _viewColor;
-		if ( i == VIEW_NORMAL )		shader = _viewNormal;
-		if ( i == VIEW_TESS )		shader = _viewTess;
+		if ( i == VIEW_COLOR )		shader = _viewColor;	else
+		if ( i == VIEW_NORMAL )		shader = _viewNormal;	else
+		if ( i == VIEW_TESS )		shader = _viewTess;		else
+									return;
+
+		program->getStates().mvp = _ortho;
 
 		program->bind( shader );
 
+		glDisable(GL_DEPTH_TEST);
 		_colorTarget->bind(  TEX_DIFFUSE );
 		_normalTarget->bind( TEX_NORMAL );
 		_depthTarget->bind(  TEX_DEPTH );
@@ -98,6 +106,7 @@ public:
 		_depthTarget->unbind(  TEX_DEPTH );
 		_normalTarget->unbind( TEX_NORMAL );
 		_colorTarget->unbind(  TEX_DIFFUSE );
+		glEnable(GL_DEPTH_TEST);
 	}
 };
 
@@ -143,6 +152,7 @@ public:
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
 
 		gridMesh->draw();
 	}
@@ -152,12 +162,10 @@ public:
 class Part2 : public Mode
 {
 private:
-	Shader	*	_shaderTessTri,
-			*	_shaderTessQuad;
-	int			_patchSize;
+	Shader	*	_shader;
 
 public:
-	Part2(): _shaderTessTri(NULL), _shaderTessQuad(NULL), _patchSize(0)
+	Part2(): _shader(NULL)
 	{}
 
 	~Part2()
@@ -167,41 +175,23 @@ public:
 
 	void load()
 	{
-		program->load( _shaderTessTri,  "shaders/tess_tri_rnd_level.prg" );
-		program->load( _shaderTessQuad, "shaders/tess_quad_rnd_level.prg" );
+		program->load( _shader,  "shaders/tess_tri_rnd_level.prg" );
+		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 3 );
 	}
 
 	void unload()
 	{
-		delete _shaderTessTri;		_shaderTessTri = NULL;
-		delete _shaderTessQuad;		_shaderTessQuad = NULL;
-		_patchSize = 0;
+		delete _shader;		_shader = NULL;
 	}
 
 	void draw(int i)
 	{
-		// i:	0 - triangles,		2 - quads
-		//		1 - correct mode,	3 - incorrect mode
-		Shader *	shader	= (i & 2) ? _shaderTessQuad : _shaderTessTri;
-		bool		regenerate	= false;
-
-		if ( shader == _shaderTessQuad && _patchSize != 4 ) {
-			_patchSize = 4;
-			regenerate = true;
-		}
-		if ( shader == _shaderTessTri && _patchSize != 3 ) {
-			_patchSize = 3;
-			regenerate = true;
-		}
-		if ( regenerate ) {
-			gridMesh->createGrid( gridSize, 1.f / float(gridSize), _patchSize );
-		}
-
-		program->bind( shader );
-		shader->setUniformInt( shader->getLoc("unIncorrectMode"), !!(i & 1) );
+		program->bind( _shader );
+		_shader->setUniformInt( _shader->getLoc("unIncorrectMode"), !!(i & 1) );
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
 
 		gridMesh->draw();
 	}
@@ -244,7 +234,28 @@ public:
 
 		_fbo->bind();
 		_fbo->attach( _renderTarget, GL_COLOR_ATTACHMENT0 );
+
+		// generate normal and tess level map
+		glDepthMask( GL_FALSE );
+		glDisable( GL_DEPTH_TEST );
+
+		glDrawBuffer( GL_COLOR_ATTACHMENT0 );
+		glViewport( 0, 0, heightMap->getWidth(), heightMap->getHeight() );
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		program->getStates().mvp = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );
+		program->bind( _genShader );
+
+		heightMap->bind( TEX_HEIGHT );
+
+		fullScreenQuad->draw();
+
 		_fbo->unbind();
+
+		glDepthMask( GL_TRUE );
+		glEnable( GL_DEPTH_TEST );
+		glDrawBuffer( GL_BACK );
+		glViewport( 0, 0, scrWidth, scrHeight );
 	}
 
 	void unload()
@@ -255,45 +266,17 @@ public:
 		delete _fbo;			_fbo = NULL;
 	}
 
-	void draw(int i)
+	void draw(int)
 	{
-		if ( i == 0 )
-		{
-			program->bind( _tessShader );
+		program->bind( _tessShader );
 
-			diffuseMap->bind( TEX_DIFFUSE );
-			heightMap->bind(  TEX_HEIGHT );
-			_renderTarget->bind( TEX_NORMAL );
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
+		_renderTarget->bind( TEX_NORMAL );
 
-			gridMesh->draw();
+		gridMesh->draw();
 
-			_renderTarget->unbind( TEX_NORMAL );
-
-		}
-		else
-		{
-			// generate normal and tess level map
-			_fbo->bind();
-
-			glDepthMask( GL_FALSE );
-			glDisable( GL_DEPTH_TEST );
-
-			glDrawBuffer( GL_COLOR_ATTACHMENT0 );
-			glViewport( 0, 0, heightMap->getWidth(), heightMap->getHeight() );
-
-			program->bind( _genShader );
-
-			heightMap->bind( TEX_HEIGHT );
-
-			fullScreenQuad->draw();
-
-			_fbo->unbind();
-
-			glDepthMask( GL_TRUE );
-			glEnable( GL_DEPTH_TEST );
-			glDrawBuffer( GL_BACK );
-			glViewport( 0, 0, scrWidth, scrHeight );
-		}
+		_renderTarget->unbind( TEX_NORMAL );
 	}
 };
 
@@ -329,6 +312,7 @@ public:
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
 
 		gridMesh->draw();
 	}
@@ -366,6 +350,7 @@ public:
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
 
 		gridMesh->draw();
 	}
@@ -402,12 +387,13 @@ public:
 
 	void draw(int i)
 	{
-		Shader *	shader = (i & 1) ? _shaderDist : _shaderScreenSpace;
+		Shader *	shader = (i & 1) ? _shaderScreenSpace : _shaderDist;
 
 		program->bind( shader );
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
 
 		gridMesh->draw();
 	}
