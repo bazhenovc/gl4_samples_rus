@@ -11,6 +11,7 @@ enum ETextureType
 	TEX_NORMAL,
 	TEX_HEIGHT,
 	TEX_DEPTH,
+	TEX_TESS_LEVEL,
 };
 
 
@@ -28,7 +29,7 @@ public:
 		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(1000.f), maxTessLevel(12.f), heightScale(100.f), detailLevel(1500.f) {}
+		States(): gridScale(1000.f), maxTessLevel(12.f), heightScale(-100.f), detailLevel(1500.f) {}
 	};
 
 private:
@@ -67,6 +68,8 @@ bool setResourceDirectory(const char *dirName, int maxSearchDepth = 4)
 		}
 		path = "../" + path;
 	}
+#else
+#	error TODO: set current directory...
 #endif
 	return false;
 }
@@ -75,10 +78,11 @@ bool setResourceDirectory(const char *dirName, int maxSearchDepth = 4)
 void Program::setConstUniforms(Shader *shader) const
 {
 	shader->bind();
-	shader->setTexture( shader->getLoc("unDiffuseMap"),	TEX_DIFFUSE );
-	shader->setTexture( shader->getLoc("unHeightMap"),	TEX_HEIGHT );
-	shader->setTexture( shader->getLoc("unNormalMap"),	TEX_NORMAL );
-	shader->setTexture( shader->getLoc("unDepthMap"),	TEX_DEPTH );
+	shader->setTexture( shader->getLoc("unDiffuseMap"),		TEX_DIFFUSE );
+	shader->setTexture( shader->getLoc("unHeightMap"),		TEX_HEIGHT );
+	shader->setTexture( shader->getLoc("unNormalMap"),		TEX_NORMAL );
+	shader->setTexture( shader->getLoc("unDepthMap"),		TEX_DEPTH );
+	shader->setTexture( shader->getLoc("unTessLevelMap"),	TEX_TESS_LEVEL );
 	shader->unbind();
 }
 
@@ -86,11 +90,11 @@ void Program::setUniforms(Shader *shader)
 {
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 
-	shader->setUniformMatrix( "unMVPMatrix",						_states.mvp );
-	shader->setUniformFloat( shader->getLoc("unGridScale"),		_states.gridScale );
-	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	_states.maxTessLevel );
+	shader->setUniformMatrix( "unMVPMatrix",						 _states.mvp );
+	shader->setUniformFloat( shader->getLoc("unGridScale"),		 _states.gridScale );
+	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	 _states.maxTessLevel );
 	shader->setUniformFloat( shader->getLoc("unHeightScale"),	-_states.heightScale );
-	shader->setUniformFloat( shader->getLoc("unDetailLevel"),	_states.detailLevel );
+	shader->setUniformFloat( shader->getLoc("unDetailLevel"),	 _states.detailLevel );
 }
 
 bool Program::load(Shader *&shader, const char *fileName) const

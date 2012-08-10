@@ -9,7 +9,7 @@ layout(location = 0)	in vec2 inPosition;		// [-1,+1]
 
 uniform float		unGridScale		= 100.0;
 uniform float		unMaxTessLevel	= 32.0;
-uniform sampler2D	unNormalMap;
+uniform sampler2D	unTessLevelMap;	// R8
 
 out	TVertData {
 	vec2	vTexcoord0;
@@ -23,7 +23,7 @@ void main()
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
 	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
-	Output.fLevel		= clamp( texture( unNormalMap, Output.vTexcoord1 ).a * unMaxTessLevel,
+	Output.fLevel		= clamp( texture( unTessLevelMap, Output.vTexcoord1 ).r * unMaxTessLevel,
 								1.0, unMaxTessLevel );
 }
 
@@ -46,6 +46,7 @@ in	TVertData {
 out TContData {
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Output[];
 
 
@@ -66,6 +67,7 @@ void main()
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
 	Output[I].vTexcoord0	= Input[I].vTexcoord0;
 	Output[I].vTexcoord1	= Input[I].vTexcoord1;
+	Output[I].fLevel		= Input[I].fLevel;
 }
 
 
@@ -78,13 +80,14 @@ layout(quads, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
-uniform sampler2D	unNormalMap;	// normal (rgb), tess level (a)
+uniform sampler2D	unNormalMap;
 uniform float		unHeightScale	= 10.0;
 uniform float		unMaxTessLevel	= 32.0;
 
 in TContData {
 	vec2	vTexcoord0;
 	vec2	vTexcoord1;
+	float	fLevel;
 } Input[];
 
 out	TEvalData {
@@ -120,9 +123,8 @@ void main()
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
-	vec4	texdata		= texture( unNormalMap, texc );
-	Output.vNormal		= texdata.rgb * 2.0 - 1.0;
-	Output.fLevel		= texdata.a * unMaxTessLevel;
+	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.fLevel		= Interpolate( Input, .fLevel );
 	
 	pos.xyz += PCF( texc ) * vec3(0.0, 1.0, 0.0) * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
@@ -151,7 +153,7 @@ void main(void)
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= Input.fLevel / unMaxTessLevel;
+	outNormal.a		= 1.0 - Input.fLevel / unMaxTessLevel;
 }
 
 --eof

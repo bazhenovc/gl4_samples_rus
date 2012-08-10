@@ -73,10 +73,10 @@ dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
     }
     /* Generate new texture */
     glGenTextures (1, &texture->id);
-    glEnable (GL_TEXTURE_2D);
+    //glEnable (GL_TEXTURE_2D);
     glBindTexture (GL_TEXTURE_2D, texture->id);
     /* Filtering */
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texture->num_mipmaps > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     size_t blockSize = texture->format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16;
     size_t offset = 0;
@@ -98,7 +98,7 @@ dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
         offset += mipSize;
     }
     dds_free (&textureInfo);
-    glDisable (GL_TEXTURE_2D);
+   // glDisable (GL_TEXTURE_2D);
     return DDS_OK;
 }
 

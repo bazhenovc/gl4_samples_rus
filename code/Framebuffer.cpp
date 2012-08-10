@@ -70,16 +70,13 @@ Texture* Framebuffer::createTexture(GLuint type, unsigned int width, unsigned in
 									GLuint byteType)
 {
 	Texture* ret = new Texture(type);
-	ret->bind();
 	ret->copyData(NULL, width, height, format, internalFormat, byteType);
-	ret->unbind();
 	return ret;
 }
 
 void Framebuffer::attach(Texture *texture, GLuint attachment)
 {
-	//glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
-	glFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture->getID(), 0 );
+	glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
 }
 
 RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, unsigned int height)

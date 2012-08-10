@@ -42,7 +42,7 @@ void init()
 {
 	setResourceDirectory( "media" );
 	
-	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-200.f, -30.f, -200.f) );
+	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-270.f, -50.f, -400.f) );
 
 	gridMesh		= new Mesh();
 
@@ -55,8 +55,8 @@ void init()
 	normalMap		= new Texture( GL_TEXTURE_2D );
 
 	diffuseMap->loadDDS( "textures/rockwall.dds" );
-	heightMap->loadDDS(  "textures/rockwall.dds" );
-	normalMap->loadDDS(  "textures/rockwall.dds" );
+	heightMap->loadDDS(  "textures/rockwall_height.dds" );
+	normalMap->loadDDS(  "textures/rockwall_normal.dds" );
 
 	program			= new Program();
 
@@ -65,6 +65,8 @@ void init()
 
 	currentView->init();
 	currentMode->load();
+
+	glClearColor( 0.f, 0.8f, 1.0f, 1.f );
 }
 
 void shutdown()
@@ -173,7 +175,7 @@ int main(int argc, char** argv)
 {
 	atexit(shutdown);
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(scrWidth, scrHeight);
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);

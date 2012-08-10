@@ -50,7 +50,7 @@ vec3 GetColor(float f)
 void main()
 {
 	float	f = texture( unNormalMap, vTexcoord ).a;
-	outColor = vec4( GetColor( 1.0 - f ), 1.0 );
+	outColor = vec4( GetColor( f ), 1.0 );
 }
 
 --eof

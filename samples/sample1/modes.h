@@ -11,7 +11,8 @@ class View
 private:
 	Shader		*	_viewColor,
 				*	_viewNormal,
-				*	_viewTess;
+				*	_viewTess,
+				*	_shader;
 	Texture		*	_colorTarget,
 				*	_normalTarget,
 				*	_depthTarget;
@@ -20,7 +21,7 @@ private:
 
 public:
 	View():
-		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL),
+		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL), _shader(NULL),
 		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL)
 	{}
 
@@ -33,6 +34,7 @@ public:
 		delete _normalTarget;
 		delete _depthTarget;
 		delete _fbo;
+		delete _shader;
 	}
 
 	void init()
@@ -42,6 +44,9 @@ public:
 		program->load( _viewColor,	"shaders/view_color.prg" );
 		program->load( _viewNormal,	"shaders/view_normal.prg" );
 		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
+
+		_shader = new Shader();
+		_shader->loadShaders( "shaders/basic.prg" );
 
 		if ( !_colorTarget )
 			_colorTarget  = new Texture( GL_TEXTURE_2D );
@@ -55,8 +60,8 @@ public:
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
-		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
-		_normalTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
+		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_normalTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
 		_depthTarget->copyData(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
 
 		_fbo->bind();
@@ -70,9 +75,7 @@ public:
 	void bind()
 	{
 		_fbo->bind();
-		const GLenum	targets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		glDrawBuffers( 2, targets );
-		//_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
+		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
 		glViewport( 0, 0, scrWidth, scrHeight );
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
@@ -80,7 +83,6 @@ public:
 	void unbind()
 	{
 		_fbo->unbind();
-		glDrawBuffer( GL_BACK );
 	}
 
 	void draw(int i)
@@ -229,7 +231,7 @@ public:
 
 		_renderTarget->bind();
 		_renderTarget->copyData( NULL, heightMap->getWidth(), heightMap->getHeight(),
-								 GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE );
+								 GL_RED, GL_R8, GL_UNSIGNED_BYTE );
 		_renderTarget->unbind();
 
 		_fbo->bind();
@@ -272,11 +274,12 @@ public:
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
-		_renderTarget->bind( TEX_NORMAL );
+		normalMap->bind(  TEX_NORMAL );
+		_renderTarget->bind( TEX_TESS_LEVEL );
 
 		gridMesh->draw();
 
-		_renderTarget->unbind( TEX_NORMAL );
+		_renderTarget->unbind( TEX_TESS_LEVEL );
 	}
 };
 

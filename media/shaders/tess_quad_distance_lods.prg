@@ -169,7 +169,7 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= textureQueryLod( unDiffuseMap, Input.vTexcoord0 ).r;
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= Input.fLevel / unMaxTessLevel;
+	outNormal.a		= 1.0 - Input.fLevel / unMaxTessLevel;
 }
 
 --eof

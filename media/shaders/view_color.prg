@@ -35,7 +35,7 @@ void main()
 	vec3		norm 		= texture( unNormalMap, vTexcoord ).rgb * 2.0 - 1.0;
 	
 	outColor = texture( unDiffuseMap, vTexcoord );
-	//outColor.rgb *= cross( norm, const_norm );
+	outColor.rgb *= clamp( dot( norm, const_norm ), 0.15, 1.0 );
 	outColor.a = 1.0;
 }
 
