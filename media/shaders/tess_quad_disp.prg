@@ -5,7 +5,7 @@
 --vertex
 #version 410 core
 
-layout(location = 0)	in vec2 inPosition;		// [-1,+1]
+layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
 uniform float	unGridScale	= 100.0;
 
@@ -21,7 +21,7 @@ void main()
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
 	Output.vNormal		= vec3( 0.0, 1.0, 0.0 );
 	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
-	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
+	Output.vTexcoord1	= inPosition;
 }
 
 
@@ -146,7 +146,7 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= 1.0;
+	outNormal.a		= 0.001;
 }
 
 --eof

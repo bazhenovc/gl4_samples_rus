@@ -5,7 +5,7 @@
 --vertex
 #version 410 core
 
-layout(location = 0)	in vec2 inPosition;		// [-1,+1]
+layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
 uniform float		unGridScale		= 100.0;
 uniform float		unMaxTessLevel	= 32.0;
@@ -21,8 +21,8 @@ out	TVertData {
 void main()
 {
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
-	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
-	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
+	Output.vTexcoord0	= inPosition * 100.0;	// for tiling
+	Output.vTexcoord1	= inPosition;
 	Output.fLevel		= clamp( texture( unTessLevelMap, Output.vTexcoord1 ).r * unMaxTessLevel,
 								1.0, unMaxTessLevel );
 }

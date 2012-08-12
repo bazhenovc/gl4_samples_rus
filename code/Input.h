@@ -25,6 +25,7 @@ private:
 	};
 
 	static unsigned char	_keys[256];
+	static unsigned char	_specKeys[128];
 	static glm::vec2		_mouseDelta;
 	static glm::vec2		_mousePos;
 
@@ -43,14 +44,14 @@ public:
 
 	static void _specialDown(int key, int, int)
 	{
-		if (key < count_of(_keys))
-			_keys[key] = DOWN;
+		if (key < count_of(_specKeys))
+			_specKeys[key] = DOWN;
 	}
 
 	static void _specialUp(int key, int, int)
 	{
-		if ( key < count_of(_keys) )
-			_keys[key] = UP;
+		if ( key < count_of(_specKeys) )
+			_specKeys[key] = UP;
 	}
 
 	static void _mouseDown(int button, int state, int x, int y)
@@ -72,6 +73,14 @@ public:
 
 	static bool isKeyClick(unsigned char key) {
 		return ( _keys[key] == DOWN && (_keys[key] = PRESSED) );
+	}
+
+	static bool isSpecKey(unsigned char key) {
+		return _specKeys[ key ] > UP ;
+	}
+
+	static bool isSpecKeyClick(unsigned char key) {
+		return ( _specKeys[key] == DOWN && (_specKeys[key] = PRESSED) );
 	}
 
 	static glm::vec2 const & mousePos() {

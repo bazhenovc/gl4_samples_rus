@@ -24,6 +24,7 @@
     <ClInclude Include="..\..\..\code\Texture.h" />
     <ClInclude Include="..\..\..\code\Camera.h" />
     <ClInclude Include="..\..\..\code\Input.h" />
+    <ClInclude Include="..\..\..\code\Query.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
@@ -34,5 +35,6 @@
     <ClCompile Include="..\..\..\code\Texture.cpp" />
     <ClCompile Include="..\..\..\code\Camera.cpp" />
     <ClCompile Include="..\..\..\code\Input.cpp" />
+    <ClCompile Include="..\..\..\code\Query.cpp" />
   </ItemGroup>
 </Project>

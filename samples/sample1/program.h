@@ -1,6 +1,7 @@
 #if defined( _WIN32 ) || defined( _WIN64 ) || defined( WIN32 ) || defined( WIN64 )
 #	define PLATFORM_WINDOWS
 #	include <Windows.h>
+#	include <GL/wglew.h>
 #endif
 
 #include <string>
@@ -29,7 +30,7 @@ public:
 		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(1000.f), maxTessLevel(12.f), heightScale(-100.f), detailLevel(1500.f) {}
+		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-800.f), detailLevel(6000.f) {}
 	};
 
 private:
@@ -73,6 +74,13 @@ bool setResourceDirectory(const char *dirName, int maxSearchDepth = 4)
 #endif
 	return false;
 }
+
+
+#ifdef PLATFORM_WINDOWS
+#	define glSwapInterval	wglSwapIntervalEXT
+#else
+#	define glSwapInterval	glxSwapIntervalEXT
+#endif
 
 
 void Program::setConstUniforms(Shader *shader) const

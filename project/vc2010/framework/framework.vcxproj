@@ -94,6 +94,7 @@
     <ClInclude Include="..\..\..\code\mathlib\Frustum.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Math.hpp" />
     <ClInclude Include="..\..\..\code\Mesh.h" />
+    <ClInclude Include="..\..\..\code\Query.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Shader.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
@@ -105,6 +106,7 @@
     <ClCompile Include="..\..\..\code\HardwareBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Input.cpp" />
     <ClCompile Include="..\..\..\code\Mesh.cpp" />
+    <ClCompile Include="..\..\..\code\Query.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Shader.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />

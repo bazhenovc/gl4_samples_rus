@@ -70,7 +70,7 @@ Texture* Framebuffer::createTexture(GLuint type, unsigned int width, unsigned in
 									GLuint byteType)
 {
 	Texture* ret = new Texture(type);
-	ret->copyData(NULL, width, height, format, internalFormat, byteType);
+	ret->create2D(NULL, width, height, format, internalFormat, byteType);
 	return ret;
 }
 

@@ -3,10 +3,10 @@
 
 #include "libdds.h"
 #include "libdds_opengl.h"
-
+/*
 #include <IL/il.h>
 #include <IL/ilu.h>
-
+*/
 #include "stdio.h"
 
 namespace framework
@@ -44,7 +44,7 @@ void Texture::unbind(int stage)
 	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, 0 );
 }
 
-void Texture::copyData(const void *data, unsigned int w, unsigned int h,
+void Texture::create2D(const void *data, unsigned int w, unsigned int h,
 					   GLuint format, GLuint internalFormat,
 					   GLuint byteType)
 {
@@ -56,10 +56,31 @@ void Texture::copyData(const void *data, unsigned int w, unsigned int h,
 	
 	bind();
 	glTexImage2D(type, 0, internalFormat, w, h, 0, format, byteType, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	unbind();
+}
+
+void Texture::create3D(const void *data, unsigned int w, unsigned int h, unsigned int d,
+					   GLuint format, GLuint internalFormat,
+					   GLuint byteType)
+{
+	if (!id) {
+		glGenTextures(1, &id);
+	}
+	width = w;
+	height = h;
+	
+	bind();
+	glTexImage3D(type, 0, internalFormat, w, h, d, 0, format, byteType, data);
+	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	unbind();
 }
 
@@ -79,7 +100,7 @@ bool Texture::loadDDS(const char *filename)
 }
 
 bool Texture::loadImage(const char *filename)
-{
+{/*
 	static bool ilinit = false;
 	if (!ilinit) {
 		ilinit = true;
@@ -98,21 +119,13 @@ bool Texture::loadImage(const char *filename)
 		return false;
 	}
 
-	width = ilGetInteger(IL_IMAGE_WIDTH);
-	height = ilGetInteger(IL_IMAGE_HEIGHT);
-
-	glGenTextures(1, &id);
-	bind();
-
-	glTexImage2D(type, 0, ilGetInteger(IL_IMAGE_FORMAT), width, height, 0,
-				 ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE),
-				 ilGetData());
+	create2D( ilGetData(), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT),
+			  ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
 
 	ilDeleteImages(1, &id);
 
-	unbind();
-
-	return true;
+	return true;*/
+	return false;
 }
 
 }

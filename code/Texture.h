@@ -39,7 +39,12 @@ public:
 		return height;
 	}
 
-	void copyData(const void* data, unsigned int w, unsigned int h,
+	void create2D(const void* data, unsigned int w, unsigned int h,
+				  GLuint format = GL_RGBA,
+				  GLuint internalFormat = GL_RGBA,
+				  GLuint byteType = GL_UNSIGNED_BYTE);
+
+	void create3D(const void* data, unsigned int w, unsigned int h, unsigned int d,
 				  GLuint format = GL_RGBA,
 				  GLuint internalFormat = GL_RGBA,
 				  GLuint byteType = GL_UNSIGNED_BYTE);

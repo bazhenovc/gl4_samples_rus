@@ -3,6 +3,7 @@ enum EViewIndex
 	VIEW_COLOR	= 0,
 	VIEW_NORMAL,
 	VIEW_TESS,
+	VIEW_COLOR_MIX_TESS,
 };
 
 
@@ -12,7 +13,7 @@ private:
 	Shader		*	_viewColor,
 				*	_viewNormal,
 				*	_viewTess,
-				*	_shader;
+				*	_viewColorMixTess;
 	Texture		*	_colorTarget,
 				*	_normalTarget,
 				*	_depthTarget;
@@ -21,7 +22,7 @@ private:
 
 public:
 	View():
-		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL), _shader(NULL),
+		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL), _viewColorMixTess(NULL),
 		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL)
 	{}
 
@@ -34,7 +35,7 @@ public:
 		delete _normalTarget;
 		delete _depthTarget;
 		delete _fbo;
-		delete _shader;
+		delete _viewColorMixTess;
 	}
 
 	void init()
@@ -44,9 +45,7 @@ public:
 		program->load( _viewColor,	"shaders/view_color.prg" );
 		program->load( _viewNormal,	"shaders/view_normal.prg" );
 		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
-
-		_shader = new Shader();
-		_shader->loadShaders( "shaders/basic.prg" );
+		program->load( _viewColorMixTess, "shaders/view_color_mix_tesslvl.prg" );
 
 		if ( !_colorTarget )
 			_colorTarget  = new Texture( GL_TEXTURE_2D );
@@ -60,9 +59,9 @@ public:
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
-		_colorTarget->copyData(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_normalTarget->copyData( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_depthTarget->copyData(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
+		_colorTarget->create2D(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_normalTarget->create2D( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
 
 		_fbo->bind();
 		_fbo->attach( _colorTarget, GL_COLOR_ATTACHMENT0 );
@@ -89,10 +88,11 @@ public:
 	{
 		Shader *	shader = NULL;
 
-		if ( i == VIEW_COLOR )		shader = _viewColor;	else
-		if ( i == VIEW_NORMAL )		shader = _viewNormal;	else
-		if ( i == VIEW_TESS )		shader = _viewTess;		else
-									return;
+		if ( i == VIEW_COLOR )			shader = _viewColor;		else
+		if ( i == VIEW_NORMAL )			shader = _viewNormal;		else
+		if ( i == VIEW_TESS )			shader = _viewTess;			else
+		if ( i == VIEW_COLOR_MIX_TESS )	shader = _viewColorMixTess;	else
+										return;
 
 		program->getStates().mvp = _ortho;
 
@@ -220,7 +220,7 @@ public:
 	void load()
 	{
 		program->load( _tessShader, "shaders/tess_quad_level_tex.prg" );
-		program->load( _genShader,  "shaders/gen_normal_and_tesslvl.prg" );
+		program->load( _genShader,  "shaders/gen_tesslvl.prg" );
 		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
 
 		if ( !_fbo )
@@ -230,7 +230,7 @@ public:
 			_renderTarget = new Texture( GL_TEXTURE_2D );
 
 		_renderTarget->bind();
-		_renderTarget->copyData( NULL, heightMap->getWidth(), heightMap->getHeight(),
+		_renderTarget->create2D( NULL, gridSize+1, gridSize+1,
 								 GL_RED, GL_R8, GL_UNSIGNED_BYTE );
 		_renderTarget->unbind();
 
@@ -242,7 +242,7 @@ public:
 		glDisable( GL_DEPTH_TEST );
 
 		glDrawBuffer( GL_COLOR_ATTACHMENT0 );
-		glViewport( 0, 0, heightMap->getWidth(), heightMap->getHeight() );
+		glViewport( 0, 0, _renderTarget->getWidth(), _renderTarget->getHeight() );
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		program->getStates().mvp = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );

@@ -6,7 +6,7 @@
 --vertex
 #version 410 core
 
-layout(location = 0)	in vec2 inPosition;		// [-1,+1]
+layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
 uniform float		unGridScale		= 100.0;
 uniform float		unMaxTessLevel	= 32.0;
@@ -33,8 +33,8 @@ void main()
 {
 	gl_Position			= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
 	Output.vNormal		= vec3( 0.0, 1.0, 0.0 );
-	Output.vTexcoord0	= (inPosition + 1.0) * 100.0;	// for tiling
-	Output.vTexcoord1	= (inPosition + 1.0) * 0.5;
+	Output.vTexcoord0	= inPosition * 100.0;	// for tiling
+	Output.vTexcoord1	= inPosition;
 	vec4	pos			= unMVPMatrix * vec4( gl_Position.xyz +
 						  texture( unHeightMap, Output.vTexcoord1 ).r *
 						  Output.vNormal * unHeightScale, 1.0 );
@@ -96,7 +96,7 @@ bool QuadInScreen()
 
 float Level(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 0.025, 0.1, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 0.002, 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -174,7 +174,9 @@ void main()
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
 	vec3	norm 		= Interpolate( Input, .vNormal );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
-	Output.fLevel		= Interpolate( gl_TessLevelOuter, );
+	Output.fLevel		= Interpolate( gl_TessLevelOuter, ) +
+						  (gl_TessLevelInner[0] * gl_TessCoord.x +
+						   gl_TessLevelInner[1] * gl_TessCoord.y) * 0.5;
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
 	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
 	
