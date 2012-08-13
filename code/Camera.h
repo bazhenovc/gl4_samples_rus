@@ -85,7 +85,7 @@ public:
 	}
 
 	inline void rotate(float x, float y) {
-		rotateRad( glm::degrees(x), glm::degrees(y) );
+		rotateRad( glm::radians(x), glm::radians(y) );
 	}
 
 	inline void move(float x, float y, float z) {

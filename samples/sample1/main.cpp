@@ -171,16 +171,16 @@ void display()
 	if ( input.isSpecKeyClick(GLUT_KEY_F5) )	loadMode( 4 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F6) )	loadMode( 5 );
 	
-	cam.rotate( input.mouseDelta() * 0.0001f );
+	cam.rotate( input.mouseDelta() * 0.1f );
 	input.resetMouseDelta();
 
 	const int	new_time	= glutGet( GLUT_ELAPSED_TIME );
-	const float	time_delta	= float( new_time - lastTime ) * 0.025;
+	const float	time_delta	= float( new_time - lastTime ) * 0.025f;
 	lastTime = new_time;
 
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
-				(input.isKey('q') - input.isKey('e')) * time_delta );
+				(input.isSpecKey(0x70) - input.isKey(' ')) * time_delta );
 
 	program->getStates().mvp = cam.toMatrix();
 

@@ -95,14 +95,7 @@ public:
 		_mouseDelta = glm::vec2(0.f,0.f);
 	}
 
-	static void init() {
-		glutSpecialFunc( _specialDown );
-		glutSpecialUpFunc( _specialUp );
-		glutKeyboardFunc( _keyDown );
-		glutKeyboardUpFunc( _keyUp );
-		glutMouseFunc( _mouseDown );
-		glutMotionFunc( _mouseMotion );
-	}
+	static void init();
 };
 }
 #endif	// _INPUT_SYSTEM_H_

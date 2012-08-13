@@ -170,13 +170,13 @@ public:
 	bool attachShaderFromFile(const char *fileName, GLenum shaderType);
 
 	// Attach shader source
-	bool attachShaderSrc(const char *src, GLenum shaderType);
+	bool attachShaderSrc(const char *src, GLenum shaderType, const char *preprocessor = NULL);
 
 	// Link program
 	bool link();
 
 	// Load shaders from single file
-	bool loadShaders(const char *fileName);
+	bool loadShaders(const char *fileName, const char *preprocessor = NULL);
 
 	// Get patch size
 	int getPatchSize();

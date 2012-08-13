@@ -266,7 +266,7 @@ bool Shader::attachShaderFromFile(const char *fileName, GLenum shaderType)
 	return true;
 }
 
-bool Shader::attachShaderSrc(const char *src, GLenum shaderType)
+bool Shader::attachShaderSrc(const char *src, GLenum shaderType, const char *preprocessor)
 {
 	if ( !_prog ) {
 		_prog = glCreateProgram();
@@ -276,7 +276,15 @@ bool Shader::attachShaderSrc(const char *src, GLenum shaderType)
 		}
 	}
 	GLuint	shader = glCreateShader( shaderType );
-	glShaderSource( shader, 1, (const GLchar **) &src, 0 );
+
+	if ( preprocessor ) {
+		std::string		source( preprocessor );
+		source += src;
+		glShaderSource( shader, 1, (const GLchar **) source.c_str(), 0 );
+	}
+	else
+		glShaderSource( shader, 1, (const GLchar **) &src, 0 );
+
 	glCompileShader( shader );
 	glAttachShader( _prog, shader );
 	glDeleteShader( shader );
@@ -304,7 +312,7 @@ bool Shader::link()
 	return true;
 }
 
-bool Shader::loadShaders(const char *fileName)
+bool Shader::loadShaders(const char *fileName, const char *preprocessor)
 {
 	struct SConfigShaderType {
 		const char *	name;
@@ -334,7 +342,7 @@ bool Shader::loadShaders(const char *fileName)
 
 	for (size_t i = 0; i < COUNTOF(shaderTypes); ++i) {
 		if ( offsets[i] != size_t(-1) && shaderTypes[i].type != 0 )
-			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type );
+			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type, preprocessor );
 	}
 	
 	return link();
