@@ -138,37 +138,57 @@ bool Texture::loadDDS(const char *filename)
 	return true;
 }
 
-bool load2DLayer(const char *filename, int layer)
-{/*
-	ILuint ilid = 0;
+bool Texture::load2DLayerDDS(const char *filename, int layer)
+{
+	if ( !id )
+		return false;
 
-	ilGenImages(1, &ilid);
-	ilBindImage(ilid);
-
-	ilLoadImage(filename);
-
-	if (IL_NO_ERROR != ilGetError()) {
-		ilDeleteImages(1, &id);
+	DDS_GL_TextureInfo texInfo;
+	int err = ddsGL_load(filename, &texInfo);
+	if (DDS_OK != err) {
+		printf("Failed to load texture: %s\n", filename);
 		return false;
 	}
+	
+    /* Generate new texture */
+    glGenTextures (1, &id);
+    glBindTexture (type, id);
 
-	subData3D( ilGetData(), 0, 0, layer, ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 1,
-			   ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
+    size_t offset = 0;
+    dds_uint mipWidth = texInfo.width,
+            mipHeight = texInfo.height,
+            mipSize;
+    /* Upload mipmaps to video memory */
+    size_t mip;
+    for (mip = 0; mip < texInfo.num_mipmaps; mip++) {
+        mipSize = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * texInfo.block_size;
+		glCompressedTexSubImage3D( type, mip, 0, 0, layer,
+					texInfo.width, texInfo.height, 1, texInfo.format,
+					mipSize, texInfo.data + offset );
 
-	ilDeleteImages(1, &id);
+        mipWidth = DDS_MAX (mipWidth >> 1, 1);
+        mipHeight = DDS_MAX (mipHeight >> 1, 1);
 
-	return true;*/
-	return false;
+        offset += mipSize;
+    }
+    ddsGL_free (&texInfo);
+	return true;
 }
 
-bool Texture::loadImage(const char *filename)
+void Texture::_initIL()
 {/*
 	static bool ilinit = false;
 	if (!ilinit) {
 		ilinit = true;
 		ilInit();
 		iluInit();
-	}
+	}*/
+}
+
+bool Texture::loadImage(const char *filename)
+{/*
+	_initIL();
+
 	ILuint ilid = 0;
 
 	ilGenImages(1, &ilid);
@@ -183,6 +203,35 @@ bool Texture::loadImage(const char *filename)
 
 	create2D( ilGetData(), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT),
 			  ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
+
+	ilDeleteImages(1, &id);
+
+	return true;*/
+	return false;
+}
+
+bool Texture::load2DLayerImage(const char *filename, int layer)
+{
+	if ( !id )
+		return false;
+	/*
+	_initIL();
+
+	ILuint ilid = 0;
+
+	ilGenImages(1, &ilid);
+	ilBindImage(ilid);
+
+	ilLoadImage(filename);
+
+	if (IL_NO_ERROR != ilGetError()) {
+		ilDeleteImages(1, &id);
+		return false;
+	}
+
+	subData3D(	ilGetData(), 0, 0, layer,
+				ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 1,
+				ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
 
 	ilDeleteImages(1, &id);
 

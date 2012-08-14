@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "Input.h"
 #include <GL/glew.h>
 
 #include <stdio.h>
@@ -9,7 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #define logPrint printf
-#define COUNTOF( x )	(sizeof(x)/sizeof(x[0]))
 
 namespace
 {
@@ -255,7 +255,7 @@ bool Shader::attachShaderFromFile(const char *fileName, GLenum shaderType)
 {
 	char* src = filetobuf( fileName );
 	if ( !src ) {
-		// TODO: error to log
+		logPrint("Error: shader not found %s", fileName);
 		return false;
 	}
 	if ( !attachShaderSrc( src, shaderType ) ) {
@@ -279,6 +279,7 @@ bool Shader::attachShaderSrc(const char *src, GLenum shaderType, const char *pre
 
 	if ( preprocessor ) {
 		std::string		source( preprocessor );
+		source += "\n";
 		source += src;
 		glShaderSource( shader, 1, (const GLchar **) source.c_str(), 0 );
 	}
@@ -335,9 +336,9 @@ bool Shader::loadShaders(const char *fileName, const char *preprocessor)
 	
 	logPrint("loading program: %s\n", fileName);
 
-	size_t	offsets[ COUNTOF(shaderTypes) ] = {0};
+	size_t	offsets[ sizeof(shaderTypes)/sizeof(shaderTypes[0]) ] = {0};
 
-	for (size_t i = 0; i < COUNTOF(shaderTypes); ++i) {
+	for (size_t i = 0; i < count_of(shaderTypes); ++i) {
 		offsets[i] = src.find( shaderTypes[i].name, 0 );
 		if ( offsets[i] != size_t(-1) ) {
 			src[ offsets[i] ] = '\0';
@@ -345,7 +346,7 @@ bool Shader::loadShaders(const char *fileName, const char *preprocessor)
 		}
 	}
 
-	for (size_t i = 0; i < COUNTOF(shaderTypes); ++i) {
+	for (size_t i = 0; i < count_of(shaderTypes); ++i) {
 		if ( offsets[i] != size_t(-1) && shaderTypes[i].type != 0 )
 			attachShaderSrc( src.c_str() + offsets[i]+1, shaderTypes[i].type, preprocessor );
 	}

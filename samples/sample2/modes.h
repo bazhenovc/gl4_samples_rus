@@ -1,0 +1,290 @@
+enum EViewIndex
+{
+	VIEW_COLOR	= 0,
+	VIEW_NORMAL,
+	VIEW_TESS,
+	VIEW_COLOR_MIX_TESS,
+};
+
+
+class View
+{
+private:
+	Shader		*	_viewColor,
+				*	_viewNormal,
+				*	_viewTess,
+				*	_viewColorMixTess;
+	Texture		*	_colorTarget,
+				*	_normalTarget,
+				*	_depthTarget;
+	Mesh		*	_fullScreenQuad;
+	Framebuffer *	_fbo;
+	glm::mat4		_ortho;
+
+public:
+	View():
+		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL), _viewColorMixTess(NULL),
+		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL), _fullScreenQuad(NULL)
+	{}
+
+	~View()
+	{
+		delete _viewColor;
+		delete _viewNormal;
+		delete _viewTess;
+		delete _colorTarget;
+		delete _normalTarget;
+		delete _depthTarget;
+		delete _fbo;
+		delete _viewColorMixTess;
+		delete _fullScreenQuad;
+	}
+
+	void init()
+	{
+		_ortho = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );
+		
+		_fullScreenQuad	= new Mesh();
+		_fullScreenQuad->makeQuad();
+
+		program->load( _viewColor,	"shaders/view_color.prg" );
+		program->load( _viewNormal,	"shaders/view_normal.prg" );
+		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
+		program->load( _viewColorMixTess, "shaders/view_color_mix_tesslvl.prg" );
+
+		if ( !_colorTarget )
+			_colorTarget  = new Texture( GL_TEXTURE_2D );
+
+		if ( !_normalTarget )
+			_normalTarget = new Texture( GL_TEXTURE_2D );
+
+		if ( !_depthTarget )
+			_depthTarget  = new Texture( GL_TEXTURE_2D );
+
+		if ( !_fbo )
+			_fbo = new Framebuffer();
+
+		_colorTarget->create2D(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_normalTarget->create2D( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
+
+		_fbo->bind();
+		_fbo->attach( _colorTarget,  GL_COLOR_ATTACHMENT0 );
+		_fbo->attach( _normalTarget, GL_COLOR_ATTACHMENT1 );
+		_fbo->attach( _depthTarget,  GL_DEPTH_ATTACHMENT );
+		_fbo->checkStatus();
+		_fbo->unbind();
+	}
+
+	void bind()
+	{
+		_fbo->bind();
+		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
+		glViewport( 0, 0, scrWidth, scrHeight );
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void unbind()
+	{
+		_fbo->unbind();
+	}
+
+	void draw(int i)
+	{
+		Shader *	shader = NULL;
+
+		if ( i == VIEW_COLOR )			shader = _viewColor;		else
+		if ( i == VIEW_NORMAL )			shader = _viewNormal;		else
+		if ( i == VIEW_TESS )			shader = _viewTess;			else
+		if ( i == VIEW_COLOR_MIX_TESS )	shader = _viewColorMixTess;	else
+										return;
+
+		program->getStates().mvp = _ortho;
+
+		program->bind( shader );
+
+		glDisable(GL_DEPTH_TEST);
+		_colorTarget->bind(  TEX_DIFFUSE );
+		_normalTarget->bind( TEX_NORMAL );
+		_depthTarget->bind(  TEX_DEPTH );
+
+		_fullScreenQuad->draw();
+
+		_depthTarget->unbind(  TEX_DEPTH );
+		_normalTarget->unbind( TEX_NORMAL );
+		_colorTarget->unbind(  TEX_DIFFUSE );
+		glEnable(GL_DEPTH_TEST);
+	}
+};
+
+
+class Mode
+{
+public:
+	virtual ~Mode() {}
+	virtual void load() = 0;
+	virtual void unload() = 0;
+	virtual void draw(int) = 0;
+};
+
+
+class Part1 : public Mode
+{
+private:
+	Shader *	_shaders[2];
+	Mesh *		_grids[2];
+
+public:
+	Part1()
+	{
+		_shaders[0] = NULL;
+		_shaders[1] = NULL;
+		_grids[0] = NULL;
+		_grids[1] = NULL;
+	}
+
+	~Part1()
+	{
+		unload();
+	}
+
+	void load()
+	{
+		const int	gridSize = 15;
+
+		program->load( _shaders[0], "shaders/tess_tri_tessmode.prg", "#define SPACING equal_spacing" );
+		program->load( _shaders[1], "shaders/tess_quad_tessmode.prg" );
+
+		_grids[0] = new Mesh();
+		_grids[0]->createGrid( gridSize, 1.f / float(gridSize), 3 );
+
+		_grids[1] = new Mesh();
+		_grids[1]->createGrid( gridSize, 1.f / float(gridSize), 4 );
+	}
+
+	void unload()
+	{
+		delete _shaders[0];		_shaders[0] = NULL;
+		delete _shaders[1];		_shaders[1] = NULL;
+		delete _grids[0];		_grids[0] = NULL;
+		delete _grids[1];		_grids[1] = NULL;
+	}
+
+	void draw(int i)
+	{
+		program->bind( _shaders[i&1] );
+		_grids[i&1]->draw();
+	}
+};
+
+
+class Part2 : public Mode
+{
+private:
+	Shader	*	_pnTriangles,
+			*	_bezierPatches;
+	Texture *	_diffuseMap,
+			*	_heightMap,
+			*	_normalMap;
+	Mesh	*	_grid3,
+			*	_grid16;
+
+public:
+	Part2(): _pnTriangles(NULL), _bezierPatches(NULL),
+			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL),
+			_grid3(NULL), _grid16(NULL)
+	{}
+
+	~Part2()
+	{
+		unload();
+	}
+
+	void load()
+	{
+		program->load( _pnTriangles,    "shaders/tess_pn-triangles.prg" );
+		program->load( _bezierPatches,  "shaders/tess_bezier.prg" );
+
+		_grid3	= new Mesh();
+		_grid16	= new Mesh();
+		
+		const int	gridSize = 127;
+
+		_grid3->createGrid(  gridSize, 1.f / float(gridSize), 3 );
+		_grid16->createGrid( gridSize, 1.f / float(gridSize), 16 );
+		
+		_diffuseMap		= new Texture( GL_TEXTURE_2D );
+		_heightMap		= new Texture( GL_TEXTURE_2D );
+		_normalMap		= new Texture( GL_TEXTURE_2D );
+
+		_diffuseMap->loadDDS( "textures/grass.dds" );
+		_heightMap->loadDDS(  "textures/height.dds" );
+		_normalMap->loadDDS(  "textures/normal.dds" );
+
+		_diffuseMap->bind();
+		_diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
+		_diffuseMap->setAnisotropy( 16 );
+		_diffuseMap->unbind();
+
+		_heightMap->bind();
+		_heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
+		_heightMap->unbind();
+
+		_normalMap->bind();
+		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
+		_normalMap->unbind();
+	}
+
+	void unload()
+	{
+		delete _pnTriangles;		_pnTriangles = NULL;
+		delete _bezierPatches;		_bezierPatches = NULL;
+		delete _grid3;				_grid3 = NULL;
+		delete _grid16;				_grid16 = NULL;
+		delete _diffuseMap;			_diffuseMap = NULL;
+		delete _heightMap;			_heightMap = NULL;
+		delete _normalMap;			_normalMap = NULL;
+	}
+
+	void draw(int i)
+	{
+		Mesh	*	grid	= i&1 ? _grid16 : _grid3;
+		Shader	*	shader	= i&1 ? _pnTriangles : _bezierPatches;
+
+		program->bind( shader );
+
+		_diffuseMap->bind( TEX_DIFFUSE );
+		_heightMap->bind(  TEX_HEIGHT );
+		_normalMap->bind(  TEX_NORMAL );
+
+		grid->draw();
+	}
+};
+
+
+class Part3 : public Mode
+{
+private:
+
+public:
+	Part3()
+	{}
+
+	~Part3()
+	{
+		unload();
+	}
+
+	void load()
+	{
+	}
+
+	void unload()
+	{
+	}
+
+	void draw(int)
+	{
+	}
+};
+

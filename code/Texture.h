@@ -66,7 +66,11 @@ public:
 	bool loadDDS(const char* filename);
 	bool loadImage(const char* filename);
 
-	bool load2DLayer(const char *filename, int layer);
+	bool load2DLayerDDS(const char *filename, int layer);
+	bool load2DLayerImage(const char *filename, int layer);
+
+private:
+	static void _initIL();
 
 private:
 

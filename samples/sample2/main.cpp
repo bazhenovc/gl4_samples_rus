@@ -17,31 +17,23 @@ class Program;
 
 Mode *		currentMode		= NULL;
 View *		currentView		= NULL;
-Mesh *		gridMesh		= NULL;
-Mesh *		fullScreenQuad	= NULL;
-Texture *	diffuseMap		= NULL,
-		*	heightMap		= NULL,
-		*	normalMap		= NULL;
 Program *	program			= NULL;
 Query *		primitivesQuery	= NULL;
 Input		input;
 int			scrWidth		= 800,
 			scrHeight		= 600;
-int			gridSize		= 127;
 int			modeIndex		= 0;
 int			currPart		= 0;
 int			frameCounter	= 0;
 int			lastTime		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
-bool		updateQuery		= true;
 
 #include "program.h"
 #include "modes.h"
 
 int			viewIndex  = VIEW_COLOR;
-Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(),
-							new Part4(), new Part5(), new Part6() };
+Mode *		allModes[] = {	new Part1(), new Part2(), new Part3() };
 
 
 void init()
@@ -49,33 +41,6 @@ void init()
 	setResourceDirectory( "media" );
 	
 	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-1590.f, -135.f, -1830.f) );
-
-	gridMesh		= new Mesh();
-
-	fullScreenQuad	= new Mesh();
-	fullScreenQuad->makeQuad();
-
-
-	diffuseMap		= new Texture( GL_TEXTURE_2D );
-	heightMap		= new Texture( GL_TEXTURE_2D );
-	normalMap		= new Texture( GL_TEXTURE_2D );
-
-	diffuseMap->loadDDS( "textures/grass.dds" );
-	heightMap->loadDDS(  "textures/height.dds" );
-	normalMap->loadDDS(  "textures/normal.dds" );
-
-	diffuseMap->bind();
-	diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
-	diffuseMap->setAnisotropy( 16 );
-	diffuseMap->unbind();
-
-	heightMap->bind();
-	heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-	heightMap->unbind();
-
-	normalMap->bind();
-	normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-	normalMap->unbind();
 
 	program			= new Program();
 
@@ -86,6 +51,8 @@ void init()
 	currentMode->load();
 
 	primitivesQuery	= new Query();
+	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+	primitivesQuery->end();
 
 	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
@@ -184,9 +151,9 @@ void display()
 	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
 	glEnable( GL_CULL_FACE );
 
-	if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	currentMode->draw( modeIndex );
-	if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
+	primitivesQuery->end();
 	
 	glDisable( GL_CULL_FACE );
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
@@ -208,16 +175,9 @@ void reshape(int w, int h)
 
 void timerFunc(int id)
 {
-	unsigned long long	res = 0;
-
-	if ( primitivesQuery->isResultReady() ) {
-		res = primitivesQuery->getResult();
-		updateQuery = true;
-	}
-
 	static char	buf[512];
 	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, frameCounter,
-			 gridMesh->getIndexBuffer()->getSize(), res );
+			 gridMesh->getIndexBuffer()->getSize(), primitivesQuery->getResult() );
 	glutSetWindowTitle( buf );
 	frameCounter = 0;
 	glutTimerFunc( 1000, timerFunc, id );
@@ -225,13 +185,12 @@ void timerFunc(int id)
 
 int main(int argc, char** argv)
 {
-	//atexit(shutdown);
+	atexit(shutdown);
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(scrWidth, scrHeight);
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
 
 	glutCreateWindow("Sample1, part1");
 	glutIdleFunc(display);
@@ -246,7 +205,6 @@ int main(int argc, char** argv)
 	init();
 
 	glutMainLoop();
-	shutdown();
 
 	return 0;
 }
