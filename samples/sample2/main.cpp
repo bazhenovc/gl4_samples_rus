@@ -71,10 +71,6 @@ void shutdown()
 		allModes[i] = NULL;
 	}
 
-	delete gridMesh;
-	delete fullScreenQuad;
-	delete diffuseMap;
-	delete heightMap;
 	delete program;
 	delete currentView;
 	delete primitivesQuery;
@@ -148,15 +144,11 @@ void display()
 	program->getStates().mvp = cam.toMatrix();
 
 	currentView->bind();
-	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
-	glEnable( GL_CULL_FACE );
 
 	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	currentMode->draw( modeIndex );
 	primitivesQuery->end();
 	
-	glDisable( GL_CULL_FACE );
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	currentView->unbind();
 
 	currentView->draw( viewIndex );
@@ -169,6 +161,7 @@ void reshape(int w, int h)
 {
 	scrWidth	= w;
 	scrHeight	= h;
+	currentMode->unload();
 	currentMode->load();
 	currentView->init();
 }
@@ -176,8 +169,8 @@ void reshape(int w, int h)
 void timerFunc(int id)
 {
 	static char	buf[512];
-	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, frameCounter,
-			 gridMesh->getIndexBuffer()->getSize(), primitivesQuery->getResult() );
+	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i", currPart+1, frameCounter,
+			 primitivesQuery->getResult() );
 	glutSetWindowTitle( buf );
 	frameCounter = 0;
 	glutTimerFunc( 1000, timerFunc, id );

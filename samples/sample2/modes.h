@@ -131,11 +131,14 @@ public:
 class Part1 : public Mode
 {
 private:
-	Shader *	_shaders[2];
+	Shader *	_shaders[6];
 	Mesh *		_grids[2];
+	int			_lastIdx,
+				_lastTime;
+	float		_partTime;
 
 public:
-	Part1()
+	Part1(): _lastIdx(0), _partTime(0.f), _lastTime(0)
 	{
 		_shaders[0] = NULL;
 		_shaders[1] = NULL;
@@ -153,7 +156,12 @@ public:
 		const int	gridSize = 15;
 
 		program->load( _shaders[0], "shaders/tess_tri_tessmode.prg", "#define SPACING equal_spacing" );
-		program->load( _shaders[1], "shaders/tess_quad_tessmode.prg" );
+		program->load( _shaders[1], "shaders/tess_tri_tessmode.prg", "#define SPACING fractional_even_spacing" );
+		program->load( _shaders[2], "shaders/tess_tri_tessmode.prg", "#define SPACING fractional_odd_spacing" );
+
+		program->load( _shaders[3], "shaders/tess_quad_tessmode.prg", "#define SPACING equal_spacing" );
+		program->load( _shaders[4], "shaders/tess_quad_tessmode.prg", "#define SPACING fractional_even_spacing" );
+		program->load( _shaders[5], "shaders/tess_quad_tessmode.prg", "#define SPACING fractional_odd_spacing" );
 
 		_grids[0] = new Mesh();
 		_grids[0]->createGrid( gridSize, 1.f / float(gridSize), 3 );
@@ -172,8 +180,30 @@ public:
 
 	void draw(int i)
 	{
-		program->bind( _shaders[i&1] );
-		_grids[i&1]->draw();
+		if ( _lastIdx != i ) {
+			_lastIdx  = i&1;
+			_partTime = 0.f;
+		}
+
+		const float		timeForShader = 5.f * 2.f;
+
+		_partTime += float(lastTime - _lastTime) * 0.001f;
+		_lastTime  = lastTime;
+
+		float		level = sin( _partTime ) * 0.5f + 0.5f;
+
+		if ( level > timeForShader * 3.f ) {
+			_partTime = 0.f;
+			level = 0.f;
+		}
+
+		program->getStates().detailLevel = level;
+
+		program->bind( _shaders[ (i&1) + int(_partTime/timeForShader + 0.5f) % 3 ] );
+
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		_grids[ i>2 ]->draw();
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
 };
 
@@ -256,8 +286,10 @@ public:
 		_diffuseMap->bind( TEX_DIFFUSE );
 		_heightMap->bind(  TEX_HEIGHT );
 		_normalMap->bind(  TEX_NORMAL );
-
+		
+		glEnable( GL_CULL_FACE );
 		grid->draw();
+		glDisable( GL_CULL_FACE );
 	}
 };
 
