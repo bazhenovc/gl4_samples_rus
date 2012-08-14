@@ -242,7 +242,7 @@ void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchS
 					indices.push_back( h*count		+ w );
 				}
 				else
-				if ( patchSize == 16 )
+				if ( patchSize == 16 && w % 3 == 0 && h % 3 == 0  )
 				{
 					for (unsigned int i = 0; i < 4; ++i)
 						for (unsigned int j = 0; j < 4; ++j)

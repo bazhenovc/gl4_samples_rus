@@ -281,8 +281,8 @@ bool Shader::attachShaderSrc(const char *src, GLenum shaderType, const char *pre
 		std::string		source( preprocessor );
 		source += "\n";
 		source += src;
-		int	src_length = source.length();
-		glShaderSource( shader, 1, (const GLchar **) source.c_str(), (const GLint *)&src_length );
+		src = source.c_str();
+		glShaderSource( shader, 1, (const GLchar **) &src, 0 );
 	}
 	else {
 		glShaderSource( shader, 1, (const GLchar **) &src, 0 );

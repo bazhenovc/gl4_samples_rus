@@ -40,7 +40,7 @@ void init()
 {
 	setResourceDirectory( "media" );
 	
-	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-1590.f, -135.f, -1830.f) );
+	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f );
 
 	program			= new Program();
 
@@ -54,7 +54,7 @@ void init()
 	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	primitivesQuery->end();
 
-	glEnable( GL_DEPTH_CLAMP );
+	//glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_FRONT );
 	glClearColor( 0.f, 0.8f, 1.0f, 1.f );
@@ -89,19 +89,19 @@ void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if ( input.isKey(27) )		exit(0);
+	if ( input.isKey(27) )			exit(0);
 
 	// + -
-	if ( input.isKey('=') )		program->getStates().maxTessLevel += 0.025f;
-	if ( input.isKey('-') )		program->getStates().maxTessLevel -= 0.025f;
+	if ( input.isKeyClick('=') )	program->getStates().maxTessLevel++;
+	if ( input.isKeyClick('-') )		program->getStates().maxTessLevel--;
 
 	// < >
-	if ( input.isKey(',') )		program->getStates().detailLevel -= 2.f;
-	if ( input.isKey('.') )		program->getStates().detailLevel += 2.f;
+	if ( input.isKey(',') )			program->getStates().detailLevel -= 2.f;
+	if ( input.isKey('.') )			program->getStates().detailLevel += 2.f;
 
 	// [ ]
-	if ( input.isKey('[') )		program->getStates().heightScale += 0.1f;
-	if ( input.isKey(']') )		program->getStates().heightScale -= 0.1f;
+	if ( input.isKey('[') )			program->getStates().heightScale += 0.1f;
+	if ( input.isKey(']') )			program->getStates().heightScale -= 0.1f;
 
 	// ( )
 	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
@@ -139,9 +139,10 @@ void display()
 
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
-				(input.isSpecKey(0x70) - input.isKey(' ')) * time_delta );
+				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );	// Ctrl, Space
 
-	program->getStates().mvp = cam.toMatrix();
+	program->getStates().mvp  = cam.toMatrix();
+	program->getStates().norm = cam.toNormalMatrix();
 
 	currentView->bind();
 
@@ -169,7 +170,7 @@ void reshape(int w, int h)
 void timerFunc(int id)
 {
 	static char	buf[512];
-	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i", currPart+1, frameCounter,
+	sprintf( buf, "Sample2, part%i  Fps:%i, vertices: %i", currPart+1, frameCounter,
 			 primitivesQuery->getResult() );
 	glutSetWindowTitle( buf );
 	frameCounter = 0;
@@ -178,14 +179,14 @@ void timerFunc(int id)
 
 int main(int argc, char** argv)
 {
-	atexit(shutdown);
+	//atexit(shutdown);
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(scrWidth, scrHeight);
 	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 
-	glutCreateWindow("Sample1, part1");
+	glutCreateWindow("Sample2, part1");
 	glutIdleFunc(display);
 	glutReshapeFunc(reshape);
 	glutTimerFunc( 1000, timerFunc, 1 );

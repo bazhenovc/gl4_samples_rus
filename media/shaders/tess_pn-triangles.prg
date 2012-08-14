@@ -29,7 +29,7 @@ out	TVertData {
 bool InScreen(in vec2 pos)
 {
 	const float		size = 1.2;
-	return all( abs(pos) <= size );
+	return all( lessThan( abs(pos), vec2(size) ) );
 }
 
 float Level(float dist)
@@ -39,15 +39,15 @@ float Level(float dist)
 
 void main()
 {
-	Output.vTexcoord0	= inPosition * 100.0;	// for tiling
-	ivec2	texc		= ivec2( inPosition * textureSize( unHeightMap, 0 ) - 0.5 );
-	vec4	pos			= unMVPMatrix * vec4( vec3( inPosition * unGridScale,
-						  texelFetch( unHeightMap, texc ).r * unHeightScale ).xzy, 1.0 );
-	Output.vNormal		= texelFetch( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vTexcoord0	= inPosition * 100.0;
+	vec2	texc		= inPosition;
+	gl_Position			= vec4( inPosition * unGridScale,
+						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
+	vec4	pos			= unMVPMatrix * gl_Position;
+	Output.fLevel		= Level( length(pos.xyz) );
+	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
 	Output.vScrCoords	= pos.xy / pos.w;
-	Output.fLevel		= Level( length(pos) );
 	Output.bInScreen	= InScreen( Output.vScrCoords );
-	gl_Position			= pos;
 }
 
 
@@ -74,7 +74,6 @@ in	TVertData {
 out TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
-	float	fLevel;
 } Output[];
 
 patch out	vec3	vB210;
@@ -90,8 +89,7 @@ patch out	vec3	vB111;
 #define Max3( _a, _b, _c )	max( max( _a, _b ), _c )
 
 #define Level( _a, _b ) \
-	(( max( _a.fLevel, _b.fLevel ) + \
-	   ScreenSpaceLevel( _a.vScrCoords, _b.vScrCoords ) ) * 0.5 )
+	max( max( _a.fLevel, _b.fLevel ), ScreenSpaceLevel( _a.vScrCoords, _b.vScrCoords ) )
 
 vec4 Rect(in vec2 p0, in vec2 p1, in vec2 p2)
 {
@@ -116,7 +114,7 @@ bool TriangleInScreen()
 
 float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 0.01, 0.1, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 0.005, 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -124,7 +122,7 @@ void main()
 	if ( I == 0 )
 	{
 		bool	in_screen = any( bvec3( Input[0].bInScreen, Input[1].bInScreen, Input[2].bInScreen ) );
-		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 0.0;
+		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 1.0;
 		
 		gl_TessLevelOuter[2] = Level( Input[1], Input[2] ) * k;
 		gl_TessLevelOuter[0] = Level( Input[0], Input[2] ) * k;
@@ -132,9 +130,9 @@ void main()
 		gl_TessLevelInner[0] = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1] ),
 									gl_TessLevelOuter[2] ) * k;
 									
-		vec3	b300 = gl_in[0].vPosition;
-		vec3	b030 = gl_in[1].vPosition;
-		vec3	b003 = gl_in[2].vPosition;
+		vec3	b300 = gl_in[0].gl_Position.xyz;
+		vec3	b030 = gl_in[1].gl_Position.xyz;
+		vec3	b003 = gl_in[2].gl_Position.xyz;
 		vec3	n200 = Input[0].vNormal;
 		vec3	n020 = Input[1].vNormal;
 		vec3	n002 = Input[2].vNormal;
@@ -154,7 +152,6 @@ void main()
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
 	Output[I].vNormal		= Input[I].vNormal;
 	Output[I].vTexcoord0	= Input[I].vTexcoord0;
-	Output[I].fLevel		= Input[I].fLevel;
 }
 
 
@@ -163,7 +160,7 @@ void main()
 --tesseval
 #version 410 core
 
-layout(quads, equal_spacing, ccw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
@@ -182,13 +179,13 @@ out	TEvalData {
 	float	fLevel;
 } Output;
 
-patch out	vec3	vB210;
-patch out	vec3	vB120;
-patch out	vec3	vB021;
-patch out	vec3	vB012;
-patch out	vec3	vB102;
-patch out	vec3	vB201;
-patch out	vec3	vB111;
+patch in	vec3	vB210;
+patch in	vec3	vB120;
+patch in	vec3	vB021;
+patch in	vec3	vB012;
+patch in	vec3	vB102;
+patch in	vec3	vB201;
+patch in	vec3	vB111;
 
 
 #define Interpolate( _a, _p ) \
@@ -213,7 +210,9 @@ void main()
 						vB111 * 6.0 * u.x * u.y * u.z;
 	Output.vNormal		= normalize( Interpolate( Input, .vNormal ) );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
-	Output.fLevel		= Interpolate( Input, .fLevel );
+	Output.fLevel		= gl_TessLevelOuter[2] * gl_TessCoord.x +
+						  gl_TessLevelOuter[0] * gl_TessCoord.y +
+						  gl_TessLevelOuter[1] * gl_TessCoord.z;
 	gl_Position			= unMVPMatrix * vec4( pos, 1.0 );
 }
 

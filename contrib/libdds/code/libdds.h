@@ -105,6 +105,7 @@ extern "C" {
     #define DDS_FOURCC_BC5U DDS_MAKE_FOURCC('B', 'C', '5', 'U')
     #define DDS_FOURCC_BC5S DDS_MAKE_FOURCC('B', 'C', '5', 'S')
     #define DDS_FOURCC_ATI1 DDS_MAKE_FOURCC('A', 'T', 'I', '1')
+    #define DDS_FOURCC_ATI2 DDS_MAKE_FOURCC('A', 'T', 'I', '2')
 
     /** Errors */
     #define DDS_OK                  0

@@ -140,8 +140,7 @@ private:
 public:
 	Part1(): _lastIdx(0), _partTime(0.f), _lastTime(0)
 	{
-		_shaders[0] = NULL;
-		_shaders[1] = NULL;
+		memset( _shaders, 0, sizeof(_shaders) );
 		_grids[0] = NULL;
 		_grids[1] = NULL;
 	}
@@ -168,6 +167,10 @@ public:
 
 		_grids[1] = new Mesh();
 		_grids[1]->createGrid( gridSize, 1.f / float(gridSize), 4 );
+
+		program->getStates().gridScale = 100.f;
+		program->getStates().maxTessLevel = 6.f;
+		cam.setPosition( glm::vec3(-50.f, -50.f, -50.f) );
 	}
 
 	void unload()
@@ -185,12 +188,12 @@ public:
 			_partTime = 0.f;
 		}
 
-		const float		timeForShader = 5.f * 2.f;
+		const float		timeForShader = 15.f * 2.f;
 
 		_partTime += float(lastTime - _lastTime) * 0.001f;
 		_lastTime  = lastTime;
 
-		float		level = sin( _partTime ) * 0.5f + 0.5f;
+		float		level = sin( fmod( _partTime, timeForShader ) ) * 0.5f + 0.5f;
 
 		if ( level > timeForShader * 3.f ) {
 			_partTime = 0.f;
@@ -199,7 +202,7 @@ public:
 
 		program->getStates().detailLevel = level;
 
-		program->bind( _shaders[ (i&1) + int(_partTime/timeForShader + 0.5f) % 3 ] );
+		program->bind( _shaders[ (i&1) /*+ int(_partTime/timeForShader + 0.5f) % 3*/ ] );
 
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		_grids[ i>2 ]->draw();
@@ -240,7 +243,7 @@ public:
 		
 		const int	gridSize = 127;
 
-		_grid3->createGrid(  gridSize, 1.f / float(gridSize), 3 );
+		_grid3->createGrid(  gridSize, 1.f / float(gridSize),  3 );
 		_grid16->createGrid( gridSize, 1.f / float(gridSize), 16 );
 		
 		_diffuseMap		= new Texture( GL_TEXTURE_2D );
@@ -248,8 +251,8 @@ public:
 		_normalMap		= new Texture( GL_TEXTURE_2D );
 
 		_diffuseMap->loadDDS( "textures/grass.dds" );
-		_heightMap->loadDDS(  "textures/height.dds" );
-		_normalMap->loadDDS(  "textures/normal.dds" );
+		_heightMap->loadDDS(  "textures/height2_bc4.dds" );
+		_normalMap->loadDDS(  "textures/normal2.dds" );
 
 		_diffuseMap->bind();
 		_diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
@@ -263,6 +266,11 @@ public:
 		_normalMap->bind();
 		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 		_normalMap->unbind();
+
+		if ( currPart != 1 ) {
+			program->getStates() = Program::States();
+			cam.setPosition( glm::vec3(-1590.f, -135.f, -1830.f) );
+		}
 	}
 
 	void unload()
@@ -279,7 +287,7 @@ public:
 	void draw(int i)
 	{
 		Mesh	*	grid	= i&1 ? _grid16 : _grid3;
-		Shader	*	shader	= i&1 ? _pnTriangles : _bezierPatches;
+		Shader	*	shader	= i&1 ? _bezierPatches : _pnTriangles;
 
 		program->bind( shader );
 
@@ -288,7 +296,9 @@ public:
 		_normalMap->bind(  TEX_NORMAL );
 		
 		glEnable( GL_CULL_FACE );
+		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
 		grid->draw();
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
 	}
 };

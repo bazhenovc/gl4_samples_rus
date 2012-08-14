@@ -129,16 +129,16 @@ void display()
 	if ( input.isKey(27) )		exit(0);
 
 	// + -
-	if ( input.isKey('=') )		program->getStates().maxTessLevel += 0.025f;
-	if ( input.isKey('-') )		program->getStates().maxTessLevel -= 0.025f;
+	if ( input.isKeyClick('=') )	program->getStates().maxTessLevel++;
+	if ( input.isKeyClick('-') )		program->getStates().maxTessLevel--;
 
 	// < >
-	if ( input.isKey(',') )		program->getStates().detailLevel -= 2.f;
-	if ( input.isKey('.') )		program->getStates().detailLevel += 2.f;
+	if ( input.isKey(',') )			program->getStates().detailLevel -= 2.f;
+	if ( input.isKey('.') )			program->getStates().detailLevel += 2.f;
 
 	// [ ]
-	if ( input.isKey('[') )		program->getStates().heightScale += 0.1f;
-	if ( input.isKey(']') )		program->getStates().heightScale -= 0.1f;
+	if ( input.isKey('[') )			program->getStates().heightScale += 0.1f;
+	if ( input.isKey(']') )			program->getStates().heightScale -= 0.1f;
 
 	// ( )
 	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
@@ -176,7 +176,7 @@ void display()
 
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
-				(input.isSpecKey(0x70) - input.isKey(' ')) * time_delta );
+				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );
 
 	program->getStates().mvp = cam.toMatrix();
 

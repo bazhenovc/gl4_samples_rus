@@ -99,6 +99,7 @@ dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
 			texture->internal_format = 1;
 			texture->block_size = 8;
 			break;
+		case DDS_FOURCC_ATI2:
         case DDS_FOURCC_BC5U:
             texture->format = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
             texture->internal_format = 2;
@@ -125,5 +126,6 @@ void ddsGL_free (DDS_GL_TextureInfo* texture) {
 		delete (DDSTextureInfo *)texture->_info;
 		texture->_info = 0;
 		texture->data = 0;
+		texture->data_size = 0;
 	}
 }

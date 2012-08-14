@@ -27,6 +27,7 @@ public:
 	struct States
 	{
 		glm::mat4	mvp;
+		glm::mat3	norm;
 		float		gridScale;
 		float		maxTessLevel;
 		float		heightScale;
@@ -101,6 +102,7 @@ void Program::setUniforms(Shader *shader)
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 
 	shader->setUniformMatrix( "unMVPMatrix",						 _states.mvp );
+	shader->setUniformMatrix( "unNormalMatrix",					 _states.norm );
 	shader->setUniformFloat( shader->getLoc("unGridScale"),		 _states.gridScale );
 	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	 _states.maxTessLevel );
 	shader->setUniformFloat( shader->getLoc("unHeightScale"),	-_states.heightScale );

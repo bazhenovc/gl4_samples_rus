@@ -18,12 +18,12 @@ out	TVertData {
 
 float Level(in vec2 pos)
 {
-	return clamp( distance( pos, vec2(0.5) ) * unDetailLevel, 0.1, unMaxTessLevel );
+	return clamp( distance( pos, vec2(0.5) ) * unDetailLevel * unMaxTessLevel, 0.1, unMaxTessLevel );
 }
 
 void main()
 {
-	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 ).xzyw;
+	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 );
 	Output.fLevel	= Level( inPosition );
 }
 

@@ -56,8 +56,30 @@ public:
 		return _proj * _view * glm::translate( _position );
 	}
 
+	inline glm::mat4 toMVMatrix() const {
+		return _view * glm::translate( _position );
+	}
+
+	inline glm::mat3 toNormalMatrix() const {
+		return glm::transpose( glm::inverse( glm::mat3( _view * glm::translate( _position ) ) ) );
+	}
+
 	inline glm::vec3 const & position() const {
 		return _position;
+	}
+
+	inline void setPosition(const glm::vec3 &pos) {
+		_position = pos;
+	}
+
+	inline glm::vec3 getDirection() const {
+		const float	x = _orientation.x;
+		const float y = _orientation.y;
+		const float z = _orientation.z;
+		const float w = _orientation.w;
+		return glm::vec3( 2.0f * x * z + 2.0f * y * w,
+						  2.0f * z * y - 2.0f * x * w,
+						  1.0f - 2.0f * x * x - 2.0f * y * y );
 	}
 
 	inline void rotateRad(float x, float y) {
