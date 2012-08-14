@@ -44,13 +44,29 @@ public:
 				  GLuint internalFormat = GL_RGBA,
 				  GLuint byteType = GL_UNSIGNED_BYTE);
 
+	void subData2D(const void* data, unsigned int x, unsigned int y,
+				  unsigned int w, unsigned int h,
+				  GLuint format = GL_RGBA, GLuint byteType = GL_UNSIGNED_BYTE);
+
 	void create3D(const void* data, unsigned int w, unsigned int h, unsigned int d,
 				  GLuint format = GL_RGBA,
 				  GLuint internalFormat = GL_RGBA,
 				  GLuint byteType = GL_UNSIGNED_BYTE);
 
+	void subData3D(const void* data, unsigned int x, unsigned int y, unsigned int z,
+				  unsigned int w, unsigned int h, unsigned int d,
+				  GLuint format = GL_RGBA, GLuint byteType = GL_UNSIGNED_BYTE);
+
+	void generateMipmaps();
+
+	void setFilter(GLenum minFilter, GLenum magFilter);
+	void setWrap(GLenum s, GLenum t, GLenum r = GL_REPEAT);
+	void setAnisotropy(int level);
+
 	bool loadDDS(const char* filename);
 	bool loadImage(const char* filename);
+
+	bool load2DLayer(const char *filename, int layer);
 
 private:
 

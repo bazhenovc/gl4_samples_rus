@@ -34,6 +34,7 @@ int			frameCounter	= 0;
 int			lastTime		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
+bool		updateQuery		= true;
 
 #include "program.h"
 #include "modes.h"
@@ -88,8 +89,8 @@ void init()
 	currentMode->load();
 
 	primitivesQuery	= new Query();
-	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
-	primitivesQuery->end();
+	//primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+	//primitivesQuery->end();
 
 	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
@@ -188,9 +189,9 @@ void display()
 	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
 	glEnable( GL_CULL_FACE );
 
-	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+	if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	currentMode->draw( modeIndex );
-	primitivesQuery->end();
+	if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
 	
 	glDisable( GL_CULL_FACE );
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
@@ -212,9 +213,16 @@ void reshape(int w, int h)
 
 void timerFunc(int id)
 {
+	unsigned long long	res = 0;
+
+	if ( primitivesQuery->isResultReady() ) {
+		res = primitivesQuery->getResult();
+		updateQuery = true;
+	}
+
 	static char	buf[512];
 	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, frameCounter,
-			 gridMesh->getIndexBuffer()->getSize(), primitivesQuery->getResult() );
+			 gridMesh->getIndexBuffer()->getSize(), res );
 	glutSetWindowTitle( buf );
 	frameCounter = 0;
 	glutTimerFunc( 1000, timerFunc, id );

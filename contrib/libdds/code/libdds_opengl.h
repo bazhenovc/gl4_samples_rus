@@ -32,6 +32,7 @@
 extern "C" {
 #endif
 
+
     /** OpenGL texture info */
     typedef struct _DDS_GL_TextureInfo {
         dds_int     width;
@@ -40,8 +41,20 @@ extern "C" {
         dds_int     internal_format;
         dds_uint    id;
         dds_uint    num_mipmaps;
+		dds_uint	block_size;
+		dds_ubyte *	data;
+        dds_long    data_size;
+		void *      _info;
     } DDS_GL_TextureInfo;
 
+    /** Load texture to OpenGL
+     * @par filename Texture filename
+     * @par texture Texture to load to
+     * @return Error code
+     */
+    DDS_API dds_uint DDS_APIENTRY ddsGL_loadToGL (const char* filename,
+            DDS_GL_TextureInfo* texture);
+	
     /** Load OpenGL texture
      * @par filename Texture filename
      * @par texture Texture to load to

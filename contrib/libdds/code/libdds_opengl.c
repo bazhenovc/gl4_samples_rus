@@ -28,57 +28,18 @@
 
 #include <GL/glew.h>
 
-dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
-    DDSTextureInfo textureInfo;
-    dds_int error = dds_load (filename, &textureInfo);
-    if (error != DDS_OK) {
-        return error;
-    }
-    texture->width = textureInfo.surface.width;
-    texture->height = textureInfo.surface.height;
-    texture->num_mipmaps = textureInfo.surface.mip_level;
-    switch (textureInfo.surface.format.fourcc) {
-        case DDS_FOURCC_DXT1:
-            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-            texture->internal_format = 3;
-            break;
-        case DDS_FOURCC_DXT3:
-            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-            texture->internal_format = 4;
-            break;
-        case DDS_FOURCC_DXT5:
-            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-            texture->internal_format = 4;
-            break;
-        case DDS_FOURCC_ATI1:
-		case DDS_FOURCC_BC4U:
-			texture->format = GL_COMPRESSED_RED_RGTC1_EXT;
-			texture->internal_format = 1;
-			break;
-		case DDS_FOURCC_BC4S:
-			texture->format = GL_COMPRESSED_SIGNED_RED_RGTC1_EXT;
-			texture->internal_format = 1;
-			break;
-        case DDS_FOURCC_BC5U:
-            texture->format = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
-            texture->internal_format = 2;
-            break;
-        case DDS_FOURCC_BC5S:
-            texture->format = GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT;
-            texture->internal_format = 2;
-            break;
-        default:
-            dds_free (&textureInfo);
-            return DDS_BAD_COMPRESSION;
-    }
+dds_uint ddsGL_loadToGL (const char* filename, DDS_GL_TextureInfo* texture) {
+	dds_uint  err = ddsGL_load( filename, texture );
+
+	if ( err != DDS_OK )
+		return err;
+
     /* Generate new texture */
     glGenTextures (1, &texture->id);
-    //glEnable (GL_TEXTURE_2D);
     glBindTexture (GL_TEXTURE_2D, texture->id);
     /* Filtering */
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texture->num_mipmaps > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    size_t blockSize = texture->format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16;
     size_t offset = 0;
     dds_uint mipWidth = texture->width,
             mipHeight = texture->height,
@@ -86,24 +47,83 @@ dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
     /* Upload mipmaps to video memory */
     size_t mip;
     for (mip = 0; mip < texture->num_mipmaps; mip++) {
-        mipSize = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * blockSize;
+        mipSize = ((mipWidth + 3) / 4) * ((mipHeight + 3) / 4) * texture->block_size;
 
         glCompressedTexImage2D (GL_TEXTURE_2D, mip, texture->format,
                 mipWidth, mipHeight, 0, mipSize,
-                textureInfo.texels + offset);
+				texture->data + offset);
 
         mipWidth = DDS_MAX (mipWidth >> 1, 1);
         mipHeight = DDS_MAX (mipHeight >> 1, 1);
 
         offset += mipSize;
     }
-    dds_free (&textureInfo);
-   // glDisable (GL_TEXTURE_2D);
+    ddsGL_free (texture);
+    return DDS_OK;
+}
+
+dds_uint ddsGL_load (const char* filename, DDS_GL_TextureInfo* texture) {
+    DDSTextureInfo * textureInfo = new DDSTextureInfo;
+    dds_int error = dds_load (filename, textureInfo);
+    if (error != DDS_OK) {
+        return error;
+    }
+    texture->width = textureInfo->surface.width;
+    texture->height = textureInfo->surface.height;
+    texture->num_mipmaps = textureInfo->surface.mip_level;
+	texture->id = 0;
+    switch (textureInfo->surface.format.fourcc) {
+        case DDS_FOURCC_DXT1:
+            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            texture->internal_format = 3;
+			texture->block_size = 8;
+            break;
+        case DDS_FOURCC_DXT3:
+            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+            texture->internal_format = 4;
+			texture->block_size = 16;
+            break;
+        case DDS_FOURCC_DXT5:
+            texture->format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            texture->internal_format = 4;
+			texture->block_size = 16;
+            break;
+        case DDS_FOURCC_ATI1:
+		case DDS_FOURCC_BC4U:
+			texture->format = GL_COMPRESSED_RED_RGTC1_EXT;
+			texture->internal_format = 1;
+			texture->block_size = 8;
+			break;
+		case DDS_FOURCC_BC4S:
+			texture->format = GL_COMPRESSED_SIGNED_RED_RGTC1_EXT;
+			texture->internal_format = 1;
+			texture->block_size = 8;
+			break;
+        case DDS_FOURCC_BC5U:
+            texture->format = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
+            texture->internal_format = 2;
+			texture->block_size = 16;
+            break;
+        case DDS_FOURCC_BC5S:
+            texture->format = GL_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT;
+            texture->internal_format = 2;
+			texture->block_size = 16;
+            break;
+        default:
+            dds_free (textureInfo);
+            return DDS_BAD_COMPRESSION;
+    }
+	texture->_info = textureInfo;
+	texture->data  = textureInfo->texels;
+	texture->data_size = textureInfo->buffer_size;
     return DDS_OK;
 }
 
 void ddsGL_free (DDS_GL_TextureInfo* texture) {
-    if (texture->id) {
-        glDeleteTextures (1, &texture->id);
-    }
+	if ( texture->_info ) {
+		dds_free( (DDSTextureInfo *)texture->_info );
+		delete (DDSTextureInfo *)texture->_info;
+		texture->_info = 0;
+		texture->data = 0;
+	}
 }

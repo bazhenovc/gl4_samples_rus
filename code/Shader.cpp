@@ -325,6 +325,11 @@ bool Shader::loadShaders(const char *fileName, const char *preprocessor)
 														{ "--fragment",		GL_FRAGMENT_SHADER },
 														{ "--eof", 0 } };
 	char *	data = filetobuf( fileName );
+	if ( !data ) {
+		logPrint("Error: program file no found \" %s\"\n", fileName);
+		return false;
+	}
+
 	std::string	src = data;
 	free(data);
 	

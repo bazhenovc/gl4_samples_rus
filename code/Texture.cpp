@@ -36,12 +36,34 @@ void Texture::unbind()
 
 void Texture::bind(int stage)
 {
+	//glActiveTexture( GL_TEXTURE0 + stage );
+	//glBindTexture( type, id );
 	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, id );
 }
 
 void Texture::unbind(int stage)
 {
+	//glActiveTexture( GL_TEXTURE0 + stage );
+	//glBindTexture( type, 0 );
 	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, 0 );
+}
+
+void Texture::setFilter(GLenum minFilter, GLenum magFilter)
+{
+	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, magFilter);
+}
+
+void Texture::setWrap(GLenum s, GLenum t, GLenum r)
+{
+	glTexParameteri(type, GL_TEXTURE_WRAP_S, s);
+	glTexParameteri(type, GL_TEXTURE_WRAP_T, t);
+	glTexParameteri(type, GL_TEXTURE_WRAP_R, r);
+}
+
+void Texture::setAnisotropy(int level)
+{
+	glTexParameteri(type, GL_TEXTURE_MAX_ANISOTROPY_EXT, level);
 }
 
 void Texture::create2D(const void *data, unsigned int w, unsigned int h,
@@ -56,11 +78,17 @@ void Texture::create2D(const void *data, unsigned int w, unsigned int h,
 	
 	bind();
 	glTexImage2D(type, 0, internalFormat, w, h, 0, format, byteType, data);
-	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	setFilter( GL_LINEAR, GL_LINEAR );
+	setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
+	unbind();
+}
+
+void Texture::subData2D(const void *data, unsigned int x, unsigned int y,
+					   unsigned int w, unsigned int h,
+					   GLuint format, GLuint byteType)
+{
+	bind();
+	glTexSubImage2D(type, 0, x, y, w, h, format, byteType, data);
 	unbind();
 }
 
@@ -76,18 +104,29 @@ void Texture::create3D(const void *data, unsigned int w, unsigned int h, unsigne
 	
 	bind();
 	glTexImage3D(type, 0, internalFormat, w, h, d, 0, format, byteType, data);
-	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(type, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	setFilter( GL_LINEAR, GL_LINEAR );
+	setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 	unbind();
+}
+
+void Texture::subData3D(const void *data, unsigned int x, unsigned int y, unsigned int z,
+					   unsigned int w, unsigned int h, unsigned int d,
+					   GLuint format, GLuint byteType)
+{
+	bind();
+	glTexSubImage3D(type, 0, x, y, z, w, h, d, format, byteType, data);
+	unbind();
+}
+
+void Texture::generateMipmaps()
+{
+	glGenerateMipmap( type );
 }
 
 bool Texture::loadDDS(const char *filename)
 {
 	DDS_GL_TextureInfo texInfo;
-	int err = ddsGL_load(filename, &texInfo);
+	int err = ddsGL_loadToGL(filename, &texInfo);
 	if (DDS_OK != err) {
 		printf("Failed to load texture: %s\n", filename);
 		return false;
@@ -97,6 +136,29 @@ bool Texture::loadDDS(const char *filename)
 	width = texInfo.width;
 	height = texInfo.height;
 	return true;
+}
+
+bool load2DLayer(const char *filename, int layer)
+{/*
+	ILuint ilid = 0;
+
+	ilGenImages(1, &ilid);
+	ilBindImage(ilid);
+
+	ilLoadImage(filename);
+
+	if (IL_NO_ERROR != ilGetError()) {
+		ilDeleteImages(1, &id);
+		return false;
+	}
+
+	subData3D( ilGetData(), 0, 0, layer, ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), 1,
+			   ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
+
+	ilDeleteImages(1, &id);
+
+	return true;*/
+	return false;
 }
 
 bool Texture::loadImage(const char *filename)
