@@ -8,10 +8,10 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float		unGridScale		= 100.0;
-uniform float		unMaxTessLevel	= 32.0;
-uniform float		unHeightScale	= 10.0;
-uniform float		unDetailLevel	= 1000.0;
+uniform float		unGridScale;
+uniform float		unMaxTessLevel;
+uniform float		unHeightScale;
+uniform float		unDetailLevel;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 
@@ -33,7 +33,7 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel/dist - 2.0, 1.0, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -46,7 +46,7 @@ void main()
 						  texture( unHeightMap, Output.vTexcoord1 ).r *
 						  Output.vNormal * unHeightScale, 1.0 );
 	Output.vScrCoords	= pos.xy / pos.w;
-	Output.fLevel		= Level( length(pos) );
+	Output.fLevel		= Level( length(pos.xyz) );
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 
@@ -137,7 +137,7 @@ layout(quads, equal_spacing, ccw) in;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
-uniform float		unHeightScale	= 10.0;
+uniform float		unHeightScale;
 
 in TContData {
 	vec3	vNormal;
@@ -153,11 +153,10 @@ out	TEvalData {
 } Output;
 
 
-#define Interpolate( a, p ) \
-	( mix( \
-		mix( a[0] p, a[1] p, gl_TessCoord.x ), \
-		mix( a[3] p, a[2] p, gl_TessCoord.x ), \
-		gl_TessCoord.y ) )
+#define Interpolate( _a, _p ) \
+	( mix(	mix( _a[0] _p, _a[1] _p, gl_TessCoord.x ), \
+			mix( _a[3] _p, _a[2] _p, gl_TessCoord.x ), \
+			gl_TessCoord.y ) )
 
 float PCF(in vec2 vTexcoord)
 {
@@ -181,7 +180,7 @@ void main()
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
-	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	
 	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;

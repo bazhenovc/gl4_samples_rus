@@ -97,6 +97,7 @@
     <ClInclude Include="..\..\..\code\Query.h" />
     <ClInclude Include="..\..\..\code\RenderBuffer.h" />
     <ClInclude Include="..\..\..\code\Shader.h" />
+    <ClInclude Include="..\..\..\code\System.h" />
     <ClInclude Include="..\..\..\code\Texture.h" />
     <ClInclude Include="..\..\..\code\Vertex.h" />
   </ItemGroup>
@@ -109,6 +110,7 @@
     <ClCompile Include="..\..\..\code\Query.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Shader.cpp" />
+    <ClCompile Include="..\..\..\code\System.cpp" />
     <ClCompile Include="..\..\..\code\Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

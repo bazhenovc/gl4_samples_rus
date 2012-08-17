@@ -60,8 +60,8 @@ public:
 		return _view * glm::translate( _position );
 	}
 
-	inline glm::mat3 toNormalMatrix() const {
-		return glm::transpose( glm::inverse( glm::mat3( _view * glm::translate( _position ) ) ) );
+	inline glm::mat4 toProjMatrix() const {
+		return _proj;
 	}
 
 	inline glm::vec3 const & position() const {

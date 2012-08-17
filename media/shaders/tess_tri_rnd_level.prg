@@ -7,8 +7,8 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 12.0;
+uniform float	unGridScale;
+uniform float	unMaxTessLevel;
 
 out	TVertData {
 	vec3	vNormal;
@@ -42,7 +42,7 @@ void main()
 
 layout(vertices = 3) out;
 
-uniform bool	unIncorrectMode = false;
+uniform bool	unIncorrectMode;
 
 in	TVertData {
 	vec3	vNormal;
@@ -90,7 +90,7 @@ layout(triangles, equal_spacing, ccw) in;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
-uniform float		unHeightScale	= 10.0;
+uniform float		unHeightScale;
 
 in TContData {
 	vec3	vNormal;
@@ -134,7 +134,7 @@ void main()
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	Output.fLevel		= Interpolate( Input, .fLevel );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
-	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	
 	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;

@@ -30,7 +30,7 @@ uniform sampler2D	unNormalMap;
 in vec2		vTexcoord;
 
 const int		colors = 4;
-const vec3		vColors[colors] = vec3[] (
+uniform vec3	vColors[colors] = vec3[] (
 					vec3( 1.0, 0.0, 0.0 ),
 					vec3( 0.8, 1.0, 0.0 ),
 					vec3( 0.0, 0.8, 1.0 ),
@@ -39,11 +39,10 @@ const vec3		vColors[colors] = vec3[] (
 				
 vec3 GetColor(float f)
 {
-	float	a = f * colors;
-	int		i = int( clamp( a, 0.0, float(colors-2) ) );
+	float	a = clamp( f * colors, 0.0, float(colors) );
+	int		i = int( clamp( a, 0.0, float(colors-1) ) );
 	
 	a -= float(i);
-	
 	return mix( vColors[i], vColors[i+1], a );
 }
 

@@ -1,13 +1,4 @@
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-
-#include "Mesh.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Framebuffer.h"
-#include "Camera.h"
-#include "Input.h"
-#include "Query.h"
+#include "System.h"
 
 using namespace framework;
 
@@ -24,31 +15,27 @@ Texture *	diffuseMap		= NULL,
 		*	normalMap		= NULL;
 Program *	program			= NULL;
 Query *		primitivesQuery	= NULL;
-Input		input;
-int			scrWidth		= 800,
-			scrHeight		= 600;
+System		sys;
+Input &		input			= *sys.getInput();
 int			gridSize		= 127;
 int			modeIndex		= 0;
 int			currPart		= 0;
-int			frameCounter	= 0;
-int			lastTime		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
 bool		updateQuery		= true;
+float		camSpeed		= 0.025f;
 
 #include "program.h"
 #include "modes.h"
 
 int			viewIndex  = VIEW_COLOR;
 Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(),
-							new Part4(), new Part5(), new Part6() };
+							new Part4(), new Part5(), new Part6(), new Part7() };
 
 
 void init()
 {
-	setResourceDirectory( "media" );
-	
-	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f, glm::vec3(-1590.f, -135.f, -1830.f) );
+	sys.setCurrentDirectory( "media" );
 
 	gridMesh		= new Mesh();
 
@@ -90,10 +77,14 @@ void init()
 	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_FRONT );
-	glClearColor( 0.f, 0.8f, 1.0f, 1.f );
-	glSwapInterval( 0 );
-
-	lastTime = glutGet( GLUT_ELAPSED_TIME );
+	sys.swapInterval( 0 );
+	
+	cam.init( 45.0f, sys.getWndSize().x / sys.getWndSize().y,
+			  1.f, 3000.0f,
+			  glm::vec3(	-program->getStates().gridScale * 0.5f,
+							 program->getStates().heightScale * 0.1f,
+							-program->getStates().gridScale * 0.5f )
+			 );
 }
 
 void shutdown()
@@ -119,26 +110,34 @@ void loadMode(int i)
 	currentMode = allModes[ i ];
 	currentMode->load();
 	currPart = i;
-	modeIndex = 0;
+	//modeIndex = 0;
 }
 
 void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if ( input.isKey(27) )		exit(0);
+	if ( input.isKey(27) )			exit(0);
 
 	// + -
 	if ( input.isKeyClick('=') )	program->getStates().maxTessLevel++;
 	if ( input.isKeyClick('-') )		program->getStates().maxTessLevel--;
 
 	// < >
-	if ( input.isKey(',') )			program->getStates().detailLevel -= 2.f;
-	if ( input.isKey('.') )			program->getStates().detailLevel += 2.f;
+	if ( input.isKeyClick(',') )	program->getStates().detailLevel--;
+	if ( input.isKeyClick('.') )	program->getStates().detailLevel++;
 
 	// [ ]
-	if ( input.isKey('[') )			program->getStates().heightScale += 0.1f;
-	if ( input.isKey(']') )			program->getStates().heightScale -= 0.1f;
+	if ( input.isKeyClick('[') )	program->getStates().heightScale++;
+	if ( input.isKeyClick(']') )	program->getStates().heightScale--;
+
+	// left, right
+	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	program->getStates().gridScale -= 10.f;
+	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	program->getStates().gridScale += 10.f;
+
+	// up, down
+	if ( input.isSpecKeyClick(GLUT_KEY_UP) )	camSpeed += 0.01f;
+	if ( input.isSpecKeyClick(GLUT_KEY_DOWN) )	camSpeed -= 0.01f;
 
 	// ( )
 	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
@@ -150,6 +149,7 @@ void display()
 	if ( input.isKeyClick('n') )	viewIndex = VIEW_NORMAL;	// view normal map
 	if ( input.isKeyClick('t') )	viewIndex = VIEW_TESS;		// view tess level map
 	if ( input.isKeyClick('m') )	viewIndex = VIEW_COLOR_MIX_TESS;
+	if ( input.isKeyClick('f') )	viewIndex = VIEW_FOG;
 
 	if ( input.isKeyClick('p') )	wireframe = !wireframe;
 	
@@ -159,26 +159,26 @@ void display()
 	if ( input.isKey('3') )			modeIndex = 2;
 	if ( input.isKey('4') )			modeIndex = 3;
 
-	// F1..F6
+	// F1..F7
 	if ( input.isSpecKeyClick(GLUT_KEY_F1) )	loadMode( 0 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F2) )	loadMode( 1 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F3) )	loadMode( 2 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F4) )	loadMode( 3 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F5) )	loadMode( 4 );
 	if ( input.isSpecKeyClick(GLUT_KEY_F6) )	loadMode( 5 );
+	if ( input.isSpecKeyClick(GLUT_KEY_F7) )	loadMode( 6 );
 	
-	cam.rotate( input.mouseDelta() * 0.1f );
-	input.resetMouseDelta();
+	cam.rotate( input.mouseDelta() * 0.2f );
 
-	const int	new_time	= glutGet( GLUT_ELAPSED_TIME );
-	const float	time_delta	= float( new_time - lastTime ) * 0.025f;
-	lastTime = new_time;
-
+	const float	time_delta	= sys.getTimeDelta() * camSpeed;
+	
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
 				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );
 
-	program->getStates().mvp = cam.toMatrix();
+	program->getStates().mvp		 = cam.toMatrix();
+	program->getStates().norm	 = glm::inverse( glm::mat3( cam.toMVMatrix() ) );
+	program->getStates().invProj = glm::inverse( cam.toProjMatrix() );
 
 	currentView->bind();
 	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
@@ -193,60 +193,35 @@ void display()
 	currentView->unbind();
 
 	currentView->draw( viewIndex );
-
-	glutSwapBuffers();
-	++frameCounter;
 }
 
 void reshape(int w, int h)
 {
-	scrWidth	= w;
-	scrHeight	= h;
+	//scrWidth	= w;
+	//scrHeight	= h;
 	currentMode->load();
 	currentView->init();
 }
 
-void timerFunc(int id)
+void timerFunc()
 {
-	unsigned long long	res = 0;
+	static unsigned int		vertices = 0;
+	static char				buf[512];
 
 	if ( primitivesQuery->isResultReady() ) {
-		res = primitivesQuery->getResult();
+		vertices = primitivesQuery->getResult();
 		updateQuery = true;
 	}
 
-	static char	buf[512];
-	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, frameCounter,
-			 gridMesh->getIndexBuffer()->getSize(), res );
+	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, sys.getFPS(),
+			 gridMesh->getIndexBuffer()->getSize(), vertices );
 	glutSetWindowTitle( buf );
-	frameCounter = 0;
-	glutTimerFunc( 1000, timerFunc, id );
 }
 
 int main(int argc, char** argv)
 {
-	//atexit(shutdown);
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(scrWidth, scrHeight);
-	glutInitContextVersion(4, 2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
-
-	glutCreateWindow("Sample1, part1");
-	glutIdleFunc(display);
-	glutReshapeFunc(reshape);
-	glutTimerFunc( 1000, timerFunc, 1 );
-
-	input.init();
-
-	glewExperimental = GL_TRUE;
-	glewInit();
-
-	init();
-
-	glutMainLoop();
+	sys.setOnTimer( timerFunc );
+	sys.initGLUT( argc, argv, display, init, "Sample1, part1", 1024, 768 );
 	shutdown();
-
 	return 0;
 }

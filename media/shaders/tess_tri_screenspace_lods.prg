@@ -7,9 +7,9 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float		unGridScale		= 100.0;
-uniform float		unMaxTessLevel	= 32.0;
-uniform float		unHeightScale	= 10.0;
+uniform float		unGridScale;
+uniform float		unMaxTessLevel;
+uniform float		unHeightScale;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 
@@ -43,8 +43,8 @@ void main()
 
 layout(vertices = 3) out;
 
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unDetailLevel	= 1000.0;
+uniform float	unMaxTessLevel;
+uniform float	unDetailLevel;
 
 in	TVertData {
 	vec2	vScrCoords;	// position in screen
@@ -62,7 +62,7 @@ out TContData {
 
 float Level(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 0.01, 0.1, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 4.0, 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -93,7 +93,7 @@ layout(triangles, fractional_even_spacing, ccw) in;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
-uniform float		unHeightScale	= 10.0;
+uniform float		unHeightScale;
 
 in TContData {
 	vec3	vNormal;
@@ -137,7 +137,7 @@ void main()
 						  gl_TessLevelOuter[0] * gl_TessCoord.y +
 						  gl_TessLevelOuter[1] * gl_TessCoord.z;
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
-	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	
 	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;

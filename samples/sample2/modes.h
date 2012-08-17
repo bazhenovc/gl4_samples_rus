@@ -64,9 +64,9 @@ public:
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
-		_colorTarget->create2D(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_normalTarget->create2D( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_depthTarget->create2D(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
+		_colorTarget->create2D(  NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_normalTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D(  NULL, sys.getWndSize().x, sys.getWndSize().y, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
 
 		_fbo->bind();
 		_fbo->attach( _colorTarget,  GL_COLOR_ATTACHMENT0 );
@@ -80,7 +80,7 @@ public:
 	{
 		_fbo->bind();
 		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
-		glViewport( 0, 0, scrWidth, scrHeight );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().x );
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
@@ -190,9 +190,8 @@ public:
 
 		const float		timeForShader = 15.f * 2.f;
 
-		_partTime += float(lastTime - _lastTime) * 0.001f;
-		_lastTime  = lastTime;
-
+		_partTime += sys.getTimeDelta() * 0.001f;
+		
 		float		level = sin( fmod( _partTime, timeForShader ) ) * 0.5f + 0.5f;
 
 		if ( level > timeForShader * 3.f ) {
@@ -267,9 +266,9 @@ public:
 		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 		_normalMap->unbind();
 
-		if ( currPart != 1 ) {
+		if ( currPart != 1 && currPart != 2 ) {
 			program->getStates() = Program::States();
-			cam.setPosition( glm::vec3(-1590.f, -135.f, -1830.f) );
+			cam.setPosition( glm::vec3(-1590.f, -300.f, -1830.f) );
 		}
 	}
 
@@ -307,9 +306,16 @@ public:
 class Part3 : public Mode
 {
 private:
+	Shader	*	_shaderDist,
+			*	_shaderNormToCam;
+	Texture *	_diffuseMap,
+			*	_heightMap,
+			*	_normalMap;
+	Mesh	*	_grid;
 
 public:
-	Part3()
+	Part3(): _shaderDist(NULL), _shaderNormToCam(NULL), _grid(NULL),
+			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL)
 	{}
 
 	~Part3()
@@ -319,14 +325,69 @@ public:
 
 	void load()
 	{
+		program->load( _shaderDist,		 "shaders/tess_quad_screenspace_lods_culling.prg" );
+		program->load( _shaderNormToCam, "shaders/tess_quad_normal_to_camera.prg" );
+
+		_grid	= new Mesh();
+		
+		const int	gridSize = 127;
+
+		_grid->createGrid( gridSize, 1.f / float(gridSize), 4 );
+		
+		_diffuseMap		= new Texture( GL_TEXTURE_2D );
+		_heightMap		= new Texture( GL_TEXTURE_2D );
+		_normalMap		= new Texture( GL_TEXTURE_2D );
+
+		_diffuseMap->loadDDS( "textures/grass.dds" );
+		_heightMap->loadDDS(  "textures/height2_bc4.dds" );
+		_normalMap->loadDDS(  "textures/normal2.dds" );
+
+		_diffuseMap->bind();
+		_diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
+		_diffuseMap->setAnisotropy( 16 );
+		_diffuseMap->unbind();
+
+		_heightMap->bind();
+		_heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
+		_heightMap->unbind();
+
+		_normalMap->bind();
+		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
+		_normalMap->unbind();
+
+		if ( currPart != 2 && currPart != 1 ) {
+			program->getStates() = Program::States();
+			program->getStates().gridScale = 1000.f;
+			program->getStates().heightScale = -80.f;
+			program->getStates().detailLevel = 500.f;
+			//cam.setPosition( glm::vec3(-1590.f, -300.f, -1830.f) );
+			cam.setPosition( glm::vec3(-400.f, -300.f, -400.f) );
+		}
 	}
 
 	void unload()
 	{
+		delete _shaderDist;			_shaderDist = NULL;
+		delete _shaderNormToCam;	_shaderNormToCam = NULL;
+		delete _grid;				_grid = NULL;
+		delete _diffuseMap;			_diffuseMap = NULL;
+		delete _heightMap;			_heightMap = NULL;
+		delete _normalMap;			_normalMap = NULL;
 	}
 
-	void draw(int)
+	void draw(int i)
 	{
+		Shader *	shader = i&1 ? _shaderDist : _shaderNormToCam;
+		program->bind( shader );
+
+		_diffuseMap->bind( TEX_DIFFUSE );
+		_heightMap->bind(  TEX_HEIGHT );
+		_normalMap->bind(  TEX_NORMAL );
+		
+		//glEnable( GL_CULL_FACE );
+		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
+		_grid->draw();
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		//glDisable( GL_CULL_FACE );
 	}
 };
-

@@ -25,8 +25,8 @@ void main()
 layout(location = 0) out vec4	outTessLevel;	// R8
 
 uniform sampler2D	unHeightMap;
-uniform float		unHeightScale	= 10.0;
-uniform float		unGridScale 	= 100.0;
+uniform float		unHeightScale;
+uniform float		unGridScale;
 
 in vec2		vTexcoord;
 
@@ -53,7 +53,7 @@ float GenTessLevel(in mat4 mHeight)
 {
 	float	delta = DeltaHeightInCol( 0 ) + DeltaHeightInCol( 1 ) + DeltaHeightInCol( 2 ) +
 					DeltaHeightInRow( 0 ) + DeltaHeightInRow( 1 ) + DeltaHeightInRow( 2 );
-	return clamp( delta / 24.0 * unGridScale*128.0 / unHeightScale * 0.1, 0.0, 1.0 );
+	return clamp( delta / 24.0 * unGridScale*128.0 / unHeightScale, 0.0, 1.0 );
 }
 
 void main()

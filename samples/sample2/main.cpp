@@ -1,13 +1,4 @@
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-
-#include "Mesh.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Framebuffer.h"
-#include "Camera.h"
-#include "Input.h"
-#include "Query.h"
+#include "System.h"
 
 using namespace framework;
 
@@ -19,15 +10,13 @@ Mode *		currentMode		= NULL;
 View *		currentView		= NULL;
 Program *	program			= NULL;
 Query *		primitivesQuery	= NULL;
-Input		input;
-int			scrWidth		= 800,
-			scrHeight		= 600;
+System		sys;
+Input &		input			= *sys.getInput();
 int			modeIndex		= 0;
 int			currPart		= 0;
-int			frameCounter	= 0;
-int			lastTime		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
+bool		updateQuery		= true;
 
 #include "program.h"
 #include "modes.h"
@@ -38,10 +27,8 @@ Mode *		allModes[] = {	new Part1(), new Part2(), new Part3() };
 
 void init()
 {
-	setResourceDirectory( "media" );
+	sys.setCurrentDirectory( "media" );
 	
-	cam.init( 60.0f, 800.0f / 600.0f, 0.1f, 3000.0f );
-
 	program			= new Program();
 
 	currentMode		= allModes[0];
@@ -54,13 +41,18 @@ void init()
 	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	primitivesQuery->end();
 
-	//glEnable( GL_DEPTH_CLAMP );
+	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_FRONT );
 	glClearColor( 0.f, 0.8f, 1.0f, 1.f );
-	glSwapInterval( 0 );
-
-	lastTime = glutGet( GLUT_ELAPSED_TIME );
+	sys.swapInterval( 0 );
+	
+	cam.init( 60.0f, sys.getWndSize().y / sys.getWndSize().x,
+			  1.f, 3000.0f,
+			  glm::vec3(	-program->getStates().gridScale * 0.5f,
+							 program->getStates().heightScale * 0.1f,
+							-program->getStates().gridScale * 0.5f )
+			 );
 }
 
 void shutdown()
@@ -131,74 +123,55 @@ void display()
 	if ( input.isSpecKeyClick(GLUT_KEY_F6) )	loadMode( 5 );
 	
 	cam.rotate( input.mouseDelta() * 0.1f );
-	input.resetMouseDelta();
 
-	const int	new_time	= glutGet( GLUT_ELAPSED_TIME );
-	const float	time_delta	= float( new_time - lastTime ) * 0.025f;
-	lastTime = new_time;
+	const float	time_delta	= sys.getTimeDelta() * 0.025f;
 
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
 				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );	// Ctrl, Space
 
 	program->getStates().mvp  = cam.toMatrix();
-	program->getStates().norm = cam.toNormalMatrix();
+	program->getStates().norm = glm::inverse( glm::mat3( cam.toMVMatrix() ) );
 
 	currentView->bind();
-
-	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+	
+	if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	currentMode->draw( modeIndex );
-	primitivesQuery->end();
+	if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
 	
 	currentView->unbind();
 
 	currentView->draw( viewIndex );
-
-	glutSwapBuffers();
-	++frameCounter;
 }
 
 void reshape(int w, int h)
 {
-	scrWidth	= w;
-	scrHeight	= h;
+	//scrWidth	= w;
+	//scrHeight	= h;
 	currentMode->unload();
 	currentMode->load();
 	currentView->init();
 }
 
-void timerFunc(int id)
+
+void timerFunc()
 {
-	static char	buf[512];
-	sprintf( buf, "Sample2, part%i  Fps:%i, vertices: %i", currPart+1, frameCounter,
-			 primitivesQuery->getResult() );
+	static unsigned int		vertices = 0;
+	static char				buf[512];
+
+	if ( primitivesQuery->isResultReady() ) {
+		vertices = primitivesQuery->getResult();
+		updateQuery = true;
+	}
+
+	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i", currPart+1, sys.getFPS(), vertices );
 	glutSetWindowTitle( buf );
-	frameCounter = 0;
-	glutTimerFunc( 1000, timerFunc, id );
 }
 
 int main(int argc, char** argv)
 {
-	//atexit(shutdown);
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(scrWidth, scrHeight);
-	glutInitContextVersion(4, 2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-
-	glutCreateWindow("Sample2, part1");
-	glutIdleFunc(display);
-	glutReshapeFunc(reshape);
-	glutTimerFunc( 1000, timerFunc, 1 );
-
-	input.init();
-
-	glewExperimental = GL_TRUE;
-	glewInit();
-
-	init();
-
-	glutMainLoop();
-
+	sys.setOnTimer( timerFunc );
+	sys.initGLUT( argc, argv, display, init, "Sample1, part1", 1024, 768 );
+	shutdown();
 	return 0;
 }

@@ -7,8 +7,8 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float		unGridScale		= 100.0;
-uniform float		unMaxTessLevel	= 32.0;
+uniform float		unGridScale;
+uniform float		unMaxTessLevel;
 uniform sampler2D	unTessLevelMap;	// R8
 
 out	TVertData {
@@ -24,7 +24,7 @@ void main()
 	Output.vTexcoord0	= inPosition * 100.0;	// for tiling
 	Output.vTexcoord1	= inPosition;
 	Output.fLevel		= clamp( texture( unTessLevelMap, Output.vTexcoord1 ).r * unMaxTessLevel,
-								1.0, unMaxTessLevel );
+								 1.0, unMaxTessLevel );
 }
 
 
@@ -81,8 +81,8 @@ layout(quads, equal_spacing, ccw) in;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
-uniform float		unHeightScale	= 10.0;
-uniform float		unMaxTessLevel	= 32.0;
+uniform float		unHeightScale;
+uniform float		unMaxTessLevel;
 
 in TContData {
 	vec2	vTexcoord0;
@@ -123,7 +123,7 @@ void main()
 	vec4	pos 		= Interpolate( gl_in, .gl_Position );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
-	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	Output.fLevel		= Interpolate( Input, .fLevel );
 	
 	pos.xyz += PCF( texc ) * vec3(0.0, 1.0, 0.0) * unHeightScale;

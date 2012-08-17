@@ -4,6 +4,7 @@ enum EViewIndex
 	VIEW_NORMAL,
 	VIEW_TESS,
 	VIEW_COLOR_MIX_TESS,
+	VIEW_FOG,
 };
 
 
@@ -13,7 +14,8 @@ private:
 	Shader		*	_viewColor,
 				*	_viewNormal,
 				*	_viewTess,
-				*	_viewColorMixTess;
+				*	_viewColorMixTess,
+				*	_viewFog;
 	Texture		*	_colorTarget,
 				*	_normalTarget,
 				*	_depthTarget;
@@ -23,7 +25,7 @@ private:
 public:
 	View():
 		_viewColor(NULL), _viewNormal(NULL), _viewTess(NULL), _viewColorMixTess(NULL),
-		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL)
+		_colorTarget(NULL), _normalTarget(NULL), _depthTarget(NULL), _fbo(NULL), _viewFog(NULL)
 	{}
 
 	~View()
@@ -36,6 +38,7 @@ public:
 		delete _depthTarget;
 		delete _fbo;
 		delete _viewColorMixTess;
+		delete _viewFog;
 	}
 
 	void init()
@@ -46,6 +49,7 @@ public:
 		program->load( _viewNormal,	"shaders/view_normal.prg" );
 		program->load( _viewTess,	"shaders/view_tesslevel.prg" );
 		program->load( _viewColorMixTess, "shaders/view_color_mix_tesslvl.prg" );
+		program->load( _viewFog,		"shaders/view_color_fog.prg" );
 
 		if ( !_colorTarget )
 			_colorTarget  = new Texture( GL_TEXTURE_2D );
@@ -59,9 +63,9 @@ public:
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
-		_colorTarget->create2D(  NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_normalTarget->create2D( NULL, scrWidth, scrHeight, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
-		_depthTarget->create2D(  NULL, scrWidth, scrHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
+		_colorTarget->create2D(  NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_normalTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D(  NULL, sys.getWndSize().x, sys.getWndSize().y, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24, GL_FLOAT );
 
 		_fbo->bind();
 		_fbo->attach( _colorTarget, GL_COLOR_ATTACHMENT0 );
@@ -75,8 +79,15 @@ public:
 	{
 		_fbo->bind();
 		_fbo->setRenderTargets( RTF_COLOR0 | RTF_COLOR1 );
-		glViewport( 0, 0, scrWidth, scrHeight );
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
+
+		const float		depthClear = 1.0f;
+		const glm::vec4	colorClear = glm::vec4( 0.f, 0.8f, 1.0f, 1.f );
+		const glm::vec4	normalClear = glm::vec4( 1.f, 1.f, 1.f, 1.f );
+
+		glClearBufferfv( GL_DEPTH, 0, &depthClear );
+		glClearBufferfv( GL_COLOR, 0, glm::value_ptr(colorClear) );
+		glClearBufferfv( GL_COLOR, 1, glm::value_ptr(normalClear) );
 	}
 
 	void unbind()
@@ -92,6 +103,7 @@ public:
 		if ( i == VIEW_NORMAL )			shader = _viewNormal;		else
 		if ( i == VIEW_TESS )			shader = _viewTess;			else
 		if ( i == VIEW_COLOR_MIX_TESS )	shader = _viewColorMixTess;	else
+		if ( i == VIEW_FOG )			shader = _viewFog;			else
 										return;
 
 		program->getStates().mvp = _ortho;
@@ -257,7 +269,7 @@ public:
 		glDepthMask( GL_TRUE );
 		glEnable( GL_DEPTH_TEST );
 		glDrawBuffer( GL_BACK );
-		glViewport( 0, 0, scrWidth, scrHeight );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
 	}
 
 	void unload()
@@ -393,6 +405,44 @@ public:
 		Shader *	shader = (i & 1) ? _shaderScreenSpace : _shaderDist;
 
 		program->bind( shader );
+
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
+
+		gridMesh->draw();
+	}
+};
+
+
+class Part7 : public Mode
+{
+private:
+	Shader *	_shader;
+
+public:
+	Part7(): _shader(NULL)
+	{}
+
+	~Part7()
+	{
+		unload();
+	}
+
+	void load()
+	{
+		program->load( _shader, "shaders/tess_quad_normal_to_camera.prg" );
+		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
+	}
+
+	void unload()
+	{
+		delete _shader;		_shader = NULL;
+	}
+
+	void draw(int)
+	{
+		program->bind( _shader );
 
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );

@@ -44,7 +44,7 @@ void main()
 	gl_Position			= unMVPMatrix * vec4( inPosition * unGridScale,
 						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
 	Output.fLevel		= Level( length(gl_Position.xyz) );
-	Output.vNormal		= texture( unNormalMap, texc ).rgb * 2.0 - 1.0;
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	Output.vScrCoords	= gl_Position.xy / gl_Position.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
