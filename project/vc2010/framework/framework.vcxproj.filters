@@ -26,6 +26,7 @@
     <ClInclude Include="..\..\..\code\Input.h" />
     <ClInclude Include="..\..\..\code\Query.h" />
     <ClInclude Include="..\..\..\code\System.h" />
+    <ClInclude Include="..\..\..\code\Material.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
@@ -38,5 +39,6 @@
     <ClCompile Include="..\..\..\code\Input.cpp" />
     <ClCompile Include="..\..\..\code\Query.cpp" />
     <ClCompile Include="..\..\..\code\System.cpp" />
+    <ClCompile Include="..\..\..\code\Material.cpp" />
   </ItemGroup>
 </Project>

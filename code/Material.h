@@ -105,11 +105,12 @@ private:
 		std::string	uniform;
 		int			stage;
 
-		MtrTexture(): texture(NULL), unifomr(), stage(-1) {}
+		MtrTexture(): texture(NULL), uniform(), stage(-1) {}
 		MtrTexture(Texture *t, const char *u, int s): texture(t), uniform(u), stage(s) {}
 	};
 
-	Data	_data;
+	Data					_data;
+	std::vector<MtrTexture>	_textures;
 
 public:
 	Material();

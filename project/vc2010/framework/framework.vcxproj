@@ -90,6 +90,7 @@
     <ClInclude Include="..\..\..\code\Framebuffer.h" />
     <ClInclude Include="..\..\..\code\HardwareBuffer.h" />
     <ClInclude Include="..\..\..\code\Input.h" />
+    <ClInclude Include="..\..\..\code\Material.h" />
     <ClInclude Include="..\..\..\code\mathlib\AABox.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Frustum.hpp" />
     <ClInclude Include="..\..\..\code\mathlib\Math.hpp" />
@@ -106,6 +107,7 @@
     <ClCompile Include="..\..\..\code\Framebuffer.cpp" />
     <ClCompile Include="..\..\..\code\HardwareBuffer.cpp" />
     <ClCompile Include="..\..\..\code\Input.cpp" />
+    <ClCompile Include="..\..\..\code\Material.cpp" />
     <ClCompile Include="..\..\..\code\Mesh.cpp" />
     <ClCompile Include="..\..\..\code\Query.cpp" />
     <ClCompile Include="..\..\..\code\RenderBuffer.cpp" />
