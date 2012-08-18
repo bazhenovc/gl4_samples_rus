@@ -47,7 +47,7 @@ void init()
 	glClearColor( 0.f, 0.8f, 1.0f, 1.f );
 	sys.swapInterval( 0 );
 	
-	cam.init( 60.0f, sys.getWndSize().y / sys.getWndSize().x,
+	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
 			  1.f, 3000.0f,
 			  glm::vec3(	-program->getStates().gridScale * 0.5f,
 							 program->getStates().heightScale * 0.1f,

@@ -48,6 +48,16 @@ void Texture::unbind(int stage)
 	glBindMultiTextureEXT( GL_TEXTURE0 + stage, type, 0 );
 }
 
+void Texture::bindImage(int stage, GLenum format, GLenum access, int level, int layer)
+{
+	glBindImageTexture( stage, id, level, layer >= 0, layer >= 0 ? layer : 0, access, format );
+}
+
+void Texture::unbindImage(int stage)
+{
+	glBindImageTexture( stage, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI );
+}
+
 void Texture::setFilter(GLenum minFilter, GLenum magFilter)
 {
 	glTexParameteri(type, GL_TEXTURE_MIN_FILTER, minFilter);

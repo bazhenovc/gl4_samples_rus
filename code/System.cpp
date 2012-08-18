@@ -16,6 +16,9 @@
 #	define glSwapInterval	glXSwapIntervalEXT
 #endif
 
+#define logPrint printf
+
+
 namespace framework
 {
 	Input				System::_input;
@@ -32,7 +35,7 @@ namespace framework
 	void System::initGLUT(int argc, char** argv, void (* idleFunc)( void ), void (* initFunc)( void ), const char *title, int w, int h)
 	{
 		glutInit(&argc, argv);
-		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 		glutInitWindowSize(w, h);
 		glutInitContextVersion(4, 2);
 		glutInitContextProfile(GLUT_CORE_PROFILE);
@@ -47,10 +50,10 @@ namespace framework
 		glewExperimental = GL_TRUE;
 		glewInit();
 
-		initFunc();
-
 		_idleFunc	= idleFunc;
 		_windowSize	= glm::ivec2(w,h);
+
+		initFunc();
 
 		_lastTime = glutGet( GLUT_ELAPSED_TIME );
 		glutMainLoop();
@@ -105,6 +108,7 @@ namespace framework
 	#else
 	#	error TODO: set current directory...
 	#endif
+		logPrint( "can't set current directory from: %s\n", dirName );
 		return false;
 	}
 
@@ -112,4 +116,36 @@ namespace framework
 	{
 		glSwapInterval( i );
 	}
+	/*
+	void System::clearGLErrors()
+	{
+		while ( glGetError() != GL_NO_ERROR ) {}
+	}
+
+	bool System::checkGLError()
+	{
+		GLenum	err = glGetError();
+
+		if ( err == GL_NO_ERROR )
+			return true;
+
+		static const char *	errors[] = { "GL_INVALID_ENUM",
+										 "GL_INVALID_VALUE",
+										 "GL_INVALID_OPERATION",
+										 "GL_INVALID_FRAMEBUFFER_OPERATION",
+										 "GL_OUT_OF_MEMORY" };
+
+		switch ( err )
+		{
+			case GL_INVALID_ENUM:					err = 0;	break;
+			case GL_INVALID_VALUE:					err = 1;	break;
+			case GL_INVALID_OPERATION:				err = 2;	break;
+			case GL_INVALID_FRAMEBUFFER_OPERATION:	err = 3;	break;
+			case GL_OUT_OF_MEMORY:					err = 4;	break;
+			default:	logPrint("GL error: %i", err );			return false;
+		}
+
+		logPrint("GL error: %s\n", errors[err] );
+		return false;
+	}*/
 }

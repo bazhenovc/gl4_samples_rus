@@ -100,6 +100,15 @@ bool Shader::setUniformVector(int loc, const glm::vec2& value)
 	return true;
 }
 
+bool Shader::setUniformVector(int loc, const glm::ivec2& value)
+{
+	if (loc < 0) {
+		return false;
+	}
+	glUniform2iv(loc, 1, glm::value_ptr(value));
+	return true;
+}
+
 bool Shader::setUniformVector(const char* name, const glm::vec3& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
@@ -119,6 +128,15 @@ bool Shader::setUniformVector(int loc, const glm::vec3& value)
 	return true;
 }
 
+bool Shader::setUniformVector(int loc, const glm::ivec3& value)
+{
+	if (loc < 0) {
+		return false;
+	}
+	glUniform3iv(loc, 1, glm::value_ptr(value));
+	return true;
+}
+
 bool Shader::setUniformVector(const char* name, const glm::vec4& value)
 {
 	int loc = glGetUniformLocation(_prog, name);
@@ -135,6 +153,15 @@ bool Shader::setUniformVector(int loc, const glm::vec4& value)
 		return false;
 	}
 	glUniform4fv(loc, 1, glm::value_ptr(value));
+	return true;
+}
+
+bool Shader::setUniformVector(int loc, const glm::ivec4& value)
+{
+	if (loc < 0) {
+		return false;
+	}
+	glUniform4iv(loc, 1, glm::value_ptr(value));
 	return true;
 }
 
@@ -360,6 +387,18 @@ int Shader::getPatchSize()
 	GLint	i_verts = 0;
 	glGetProgramiv( _prog, GL_TESS_CONTROL_OUTPUT_VERTICES, &i_verts );
 	return i_verts;
+}
+
+bool Shader::bindUB(const char *name, int bindingIndex, GLuint bufferID)
+{
+	GLint	loc = glGetUniformBlockIndex( _prog, name );
+	if ( loc < 0 ) {
+		return false;
+	}
+
+	glBindBufferBase( GL_UNIFORM_BUFFER, bindingIndex, bufferID );
+	glUniformBlockBinding( _prog, loc, bindingIndex );
+	return true;
 }
 
 }

@@ -77,6 +77,7 @@ public:
 		Attach a texture as a render target
 	*/
 	void attach(Texture* texture, GLuint attachment);
+	void attachLayer(Texture *texture, GLenum attachment, GLint layer);
 
 	/**
 		Create renderbuffer for attaching

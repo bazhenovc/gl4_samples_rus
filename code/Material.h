@@ -6,6 +6,7 @@
 #include "Texture.h"
 #include <vector>
 #include <string>
+#include <assert.h>
 
 namespace framework
 {
@@ -67,7 +68,8 @@ struct RenderState
 	GLenum			cullFace,
 					frontFace,
 					polygonMode;
-	glm::vec2		polygonOffsets;
+	glm::vec2		polygonOffsets,
+					depthRange;
 	bool			depthClamp		: 1,
 					dither			: 1,
 					polygonOffset	: 1,
@@ -76,8 +78,9 @@ struct RenderState
 					framebufferSRGB	: 1,
 					culling			: 1;
 
-	RenderState(): cullFace(GL_BACK), frontFace(GL_CCW), polygonMode(GL_FILL), polygonOffsets(), smooth(0),
-		depthClamp(1), dither(0), polygonOffset(0), cubeMapSeamless(0), culling(0), framebufferSRGB(0)
+	RenderState(): cullFace(GL_BACK), frontFace(GL_CCW), polygonMode(GL_FILL), polygonOffsets(0.f), smooth(0),
+		depthClamp(1), dither(0), polygonOffset(0), cubeMapSeamless(0), culling(0), framebufferSRGB(0),
+		depthRange(0.f,1.f)
 	{
 		colorBuffers[0].enabled = true;
 	}
@@ -88,16 +91,6 @@ struct RenderState
 
 class Material
 {
-public:
-	struct Data
-	{
-		glm::vec3	diffuseColor,
-					ambientColor,
-					specularColor;
-
-		Data(): diffuseColor(1.f), ambientColor(1.f), specularColor(1.f) {}
-	};
-
 private:
 	struct MtrTexture
 	{
@@ -109,20 +102,47 @@ private:
 		MtrTexture(Texture *t, const char *u, int s): texture(t), uniform(u), stage(s) {}
 	};
 
-	Data					_data;
 	std::vector<MtrTexture>	_textures;
+	std::vector<char>		_uboData;
+	std::string				_uboName;
+	GLuint					_ubo;
+	size_t					_uboSize;
+	bool					_uboChanged;
 
 public:
 	Material();
 	~Material();
 
-	void apply(Shader *shader);
+	void apply(Shader *shader, GLint uboBindingIndex = 0);
+	void createUB(const char *name, size_t size, const void *data = NULL);
 
-	bool addTexture(Texture *tex, const char *uniform, int stage);
-	bool addTexture(const char *filename, const char *uniform, int stage);
+	bool addTexture(Texture *tex, const char *uniform, int stage = -1);
+	bool addTexture(const char *filename, const char *uniform, int stage, GLenum type = GL_TEXTURE_2D);
 
-	Data &			getData()			{ return _data; }
-	Data const &	getData()	const	{ return _data; }
+	template <typename T>
+	T & getData()
+	{
+		assert( sizeof(T) == _uboSize );
+		_uboChanged = true;
+		return *(T*)(&_uboData[0]);
+	}
+
+
+	// helper for copy data to UBO
+	static size_t ub_alignedCopy(void *dst, const void *src, size_t lineSize, size_t numLines, size_t alignPow)
+	{
+		size_t	size	= lineSize & (1<<(alignPow-1));
+		size_t	aligned = size == 0 ? lineSize : lineSize + ((1<<alignPow) - size);
+		size = 0;
+
+		for (size_t i = 0; i < numLines; ++i)
+		{
+			memcpy( ((char *)dst) + size, src, lineSize );
+			size += aligned;
+			src   = ((const char *)src) + lineSize;
+		}
+		return size;
+	}
 };
 
 }

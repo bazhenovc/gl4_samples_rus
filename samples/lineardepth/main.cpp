@@ -7,7 +7,6 @@ class View;
 class Program;
 
 Mode *		currentMode		= NULL;
-View *		currentView		= NULL;
 Mesh *		gridMesh		= NULL;
 Mesh *		fullScreenQuad	= NULL;
 Texture *	diffuseMap		= NULL,
@@ -28,20 +27,17 @@ float		camSpeed		= 0.025f;
 #include "program.h"
 #include "modes.h"
 
-int			viewIndex  = VIEW_COLOR;
-Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(),
-							new Part4(), new Part5(), new Part6(), new Part7() };
+Mode *		allModes[] = {	new Part1(), new Part2() };
 
 
 void init()
 {
-	sys.setCurrentDirectory( "media" );
+	sys.setCurrentDirectory( "samples/lineardepth/media" );
 
 	gridMesh		= new Mesh();
 
 	fullScreenQuad	= new Mesh();
 	fullScreenQuad->makeQuad();
-
 
 	diffuseMap		= new Texture( GL_TEXTURE_2D );
 	heightMap		= new Texture( GL_TEXTURE_2D );
@@ -67,19 +63,18 @@ void init()
 	program			= new Program();
 
 	currentMode		= allModes[0];
-	currentView		= new View();
-
-	currentView->init();
+	
 	currentMode->load();
 
 	primitivesQuery	= new Query();
 
-	glEnable( GL_DEPTH_CLAMP );
+	//glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_FRONT );
+
 	sys.swapInterval( 0 );
 	
-	cam.init( 45.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
+	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
 			  1.f, 3000.0f,
 			  glm::vec3(	-program->getStates().gridScale * 0.5f,
 							 program->getStates().heightScale * 0.1f,
@@ -100,7 +95,6 @@ void shutdown()
 	delete diffuseMap;
 	delete heightMap;
 	delete program;
-	delete currentView;
 	delete primitivesQuery;
 }
 
@@ -144,13 +138,6 @@ void display()
 	if ( input.isKeyClick('0') && modeIndex < 6 )	modeIndex++;
 
 	if ( input.isKeyClick('r') )	{ currentMode->unload();  currentMode->load(); }			// reload
-
-	if ( input.isKeyClick('c') )	viewIndex = VIEW_COLOR;		// view color map
-	if ( input.isKeyClick('n') )	viewIndex = VIEW_NORMAL;	// view normal map
-	if ( input.isKeyClick('t') )	viewIndex = VIEW_TESS;		// view tess level map
-	if ( input.isKeyClick('m') )	viewIndex = VIEW_COLOR_MIX_TESS;
-	if ( input.isKeyClick('f') )	viewIndex = VIEW_FOG;
-
 	if ( input.isKeyClick('p') )	wireframe = !wireframe;
 	
 	// 1..4
@@ -177,22 +164,8 @@ void display()
 				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );
 
 	program->getStates().mvp		 = cam.toMatrix();
-	program->getStates().norm	 = glm::inverse( glm::mat3( cam.toMVMatrix() ) );
-	program->getStates().invProj = glm::inverse( cam.toProjMatrix() );
 
-	currentView->bind();
-	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
-	glEnable( GL_CULL_FACE );
-
-	if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
 	currentMode->draw( modeIndex );
-	if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
-	
-	glDisable( GL_CULL_FACE );
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-	currentView->unbind();
-
-	currentView->draw( viewIndex );
 }
 
 void reshape(int w, int h)
@@ -200,7 +173,6 @@ void reshape(int w, int h)
 	//scrWidth	= w;
 	//scrHeight	= h;
 	currentMode->load();
-	currentView->init();
 }
 
 void timerFunc()

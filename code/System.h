@@ -47,6 +47,9 @@ public:
 	static bool setCurrentDirectory(const char *dirName, int maxSearchDepth = 4);
 
 	static void swapInterval(int i);
+
+	//static void clearGLErrors();
+	//static bool checkGLError();
 };
 
 }

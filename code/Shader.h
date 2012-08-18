@@ -72,6 +72,7 @@ public:
 	/// @param value Var
 	/// @return Assignment result
 	bool setUniformVector(int loc, const glm::vec2& value);
+	bool setUniformVector(int loc, const glm::ivec2& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
@@ -84,6 +85,7 @@ public:
 	/// @param value Var
 	/// @return Assignment result
 	bool setUniformVector(int loc, const glm::vec3& value);
+	bool setUniformVector(int loc, const glm::ivec3& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
@@ -96,6 +98,7 @@ public:
 	/// @param value Var
 	/// @return Assignment result
 	bool setUniformVector(int loc, const glm::vec4& value);
+	bool setUniformVector(int loc, const glm::ivec4& value);
 
 	/// Uniform variables handling method.
 	/// @param name Var name
@@ -180,6 +183,12 @@ public:
 
 	// Get patch size
 	int getPatchSize();
+
+	// Bind Uniform Block
+	bool bindUB(const char *name, int bindingIndex, GLuint bufferID);
+
+	// Get Program ID
+	GLuint getID()	const	{ return _prog; }
 };
 }
 

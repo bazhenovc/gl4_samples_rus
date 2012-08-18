@@ -19,6 +19,9 @@ public:
 	void bind(int stage);
 	void unbind(int stage);
 
+	void bindImage(int stage, GLenum format, GLenum access, int level = 0, int layer = -1);
+	void unbindImage(int stage);
+
 	inline unsigned int getID() const
 	{
 		return id;

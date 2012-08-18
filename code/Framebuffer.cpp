@@ -79,6 +79,11 @@ void Framebuffer::attach(Texture *texture, GLuint attachment)
 	glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
 }
 
+void Framebuffer::attachLayer(Texture *texture, GLenum attachment, GLint layer)
+{
+	glFramebufferTextureLayer( GL_FRAMEBUFFER, attachment, texture->getID(), 0, layer );
+}
+
 RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, unsigned int height)
 {
 	RenderBuffer* ret = new RenderBuffer(type, width, height);
