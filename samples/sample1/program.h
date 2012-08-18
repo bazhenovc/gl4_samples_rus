@@ -50,11 +50,11 @@ public:
 
 void Program::setConstUniforms(Shader *shader) const
 {
-	shader->setTexture( shader->getLoc("unDiffuseMap"),		TEX_DIFFUSE );
-	shader->setTexture( shader->getLoc("unHeightMap"),		TEX_HEIGHT );
-	shader->setTexture( shader->getLoc("unNormalMap"),		TEX_NORMAL );
-	shader->setTexture( shader->getLoc("unDepthMap"),		TEX_DEPTH );
-	shader->setTexture( shader->getLoc("unTessLevelMap"),	TEX_TESS_LEVEL );
+	shader->setTexture( "unDiffuseMap",		TEX_DIFFUSE );
+	shader->setTexture( "unHeightMap",		TEX_HEIGHT );
+	shader->setTexture( "unNormalMap",		TEX_NORMAL );
+	shader->setTexture( "unDepthMap",		TEX_DEPTH );
+	shader->setTexture( "unTessLevelMap",	TEX_TESS_LEVEL );
 }
 
 void Program::setUniforms(Shader *shader)
@@ -62,13 +62,13 @@ void Program::setUniforms(Shader *shader)
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 	if ( _states.detailLevel < 0.f )	_states.detailLevel = 0.f;
 
-	shader->setUniformMatrix( "unMVPMatrix",						 _states.mvp );
-	shader->setUniformMatrix( "unProjInvMatrix",					 _states.invProj );
-	shader->setUniformMatrix( "unNormalMatrix",					 _states.norm );
-	shader->setUniformFloat( shader->getLoc("unGridScale"),		 _states.gridScale );
-	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	 _states.maxTessLevel );
-	shader->setUniformFloat( shader->getLoc("unHeightScale"),	-_states.heightScale );
-	shader->setUniformFloat( shader->getLoc("unDetailLevel"),	 _states.detailLevel );
+	shader->setUniformMatrix( "unMVPMatrix",	 _states.mvp );
+	shader->setUniformMatrix( "unProjInvMatrix", _states.invProj );
+	shader->setUniformMatrix( "unNormalMatrix",	 _states.norm );
+	shader->setUniformFloat( "unGridScale"),	 _states.gridScale );
+	shader->setUniformFloat( "unMaxTessLevel"),	 _states.maxTessLevel );
+	shader->setUniformFloat( "unHeightScale"),	-_states.heightScale );
+	shader->setUniformFloat( "unDetailLevel"),	 _states.detailLevel );
 }
 
 bool Program::load(Shader *&shader, const char *fileName) const

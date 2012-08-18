@@ -1,12 +1,3 @@
-#if defined( _WIN32 ) || defined( _WIN64 ) || defined( WIN32 ) || defined( WIN64 )
-#	define PLATFORM_WINDOWS
-#	include <Windows.h>
-#	include <GL/wglew.h>
-#else
-#	include <gl/glxew.h>
-#endif
-
-#include <string>
 
 enum ETextureType
 {
@@ -55,58 +46,25 @@ public:
 
 
 
-/*
-	System function: set resource directory
-*/
-bool setResourceDirectory(const char *dirName, int maxSearchDepth = 4)
-{
-#ifdef PLATFORM_WINDOWS
-	std::string	path = dirName;
-	for (int i = 0; i < maxSearchDepth; ++i)
-	{
-		int i_code = ::GetFileAttributes( path.c_str() );
-		if ( (i_code != -1) && (FILE_ATTRIBUTE_DIRECTORY & i_code) )
-		{
-			::SetCurrentDirectory( path.c_str() );
-			return true;
-		}
-		path = "../" + path;
-	}
-#else
-#	error TODO: set current directory...
-#endif
-	return false;
-}
-
-
-#ifdef PLATFORM_WINDOWS
-#	define glSwapInterval	wglSwapIntervalEXT
-#else
-#	define glSwapInterval	glXSwapIntervalEXT
-#endif
-
-
 void Program::setConstUniforms(Shader *shader) const
 {
-	//shader->bind();
-	shader->setTexture( shader->getLoc("unDiffuseMap"),		TEX_DIFFUSE );
-	shader->setTexture( shader->getLoc("unHeightMap"),		TEX_HEIGHT );
-	shader->setTexture( shader->getLoc("unNormalMap"),		TEX_NORMAL );
-	shader->setTexture( shader->getLoc("unDepthMap"),		TEX_DEPTH );
-	shader->setTexture( shader->getLoc("unTessLevelMap"),	TEX_TESS_LEVEL );
-	//shader->unbind();
+	shader->setTexture( "unDiffuseMap",		TEX_DIFFUSE );
+	shader->setTexture( "unHeightMap",		TEX_HEIGHT );
+	shader->setTexture( "unNormalMap",		TEX_NORMAL );
+	shader->setTexture( "unDepthMap",		TEX_DEPTH );
+	shader->setTexture( "unTessLevelMap",	TEX_TESS_LEVEL );
 }
 
 void Program::setUniforms(Shader *shader)
 {
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 
-	shader->setUniformMatrix( "unMVPMatrix",						 _states.mvp );
-	shader->setUniformMatrix( "unNormalMatrix",					 _states.norm );
-	shader->setUniformFloat( shader->getLoc("unGridScale"),		 _states.gridScale );
-	shader->setUniformFloat( shader->getLoc("unMaxTessLevel"),	 _states.maxTessLevel );
-	shader->setUniformFloat( shader->getLoc("unHeightScale"),	-_states.heightScale );
-	shader->setUniformFloat( shader->getLoc("unDetailLevel"),	 _states.detailLevel );
+	shader->setUniformMatrix( "unMVPMatrix",	 _states.mvp );
+	shader->setUniformMatrix( "unNormalMatrix",	 _states.norm );
+	shader->setUniformFloat( "unGridScale",		 _states.gridScale );
+	shader->setUniformFloat( "unMaxTessLevel",	 _states.maxTessLevel );
+	shader->setUniformFloat( "unHeightScale",	-_states.heightScale );
+	shader->setUniformFloat( "unDetailLevel",	 _states.detailLevel );
 }
 
 bool Program::load(Shader *&shader, const char *fileName, const char *preprocessor) const
@@ -117,7 +75,6 @@ bool Program::load(Shader *&shader, const char *fileName, const char *preprocess
 	if ( !shader->loadShaders( fileName, preprocessor ) )
 		return false;
 
-	//setConstUniforms( shader );
 	return true;
 }
 
