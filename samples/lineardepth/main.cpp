@@ -27,7 +27,7 @@ float		camSpeed		= 0.025f;
 #include "program.h"
 #include "modes.h"
 
-Mode *		allModes[] = {	new Part1(), new Part2() };
+Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(), new Part4() };
 
 
 void init()

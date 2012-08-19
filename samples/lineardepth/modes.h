@@ -50,12 +50,6 @@ public:
 		_colorTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
 		_depthTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32F, GL_FLOAT );
 
-		if ( !_colorTarget )
-			_colorTarget  = new Texture( GL_TEXTURE_2D );
-
-		if ( !_depthTarget )
-			_depthTarget  = new Texture( GL_TEXTURE_2D );
-
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
@@ -167,12 +161,6 @@ public:
 		_colorTarget->create3D( NULL, sys.getWndSize().x, sys.getWndSize().y, 2, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
 		_depthTarget->create3D( NULL, sys.getWndSize().x, sys.getWndSize().y, 2, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT32F, GL_FLOAT );
 
-		if ( !_colorTarget )
-			_colorTarget  = new Texture( GL_TEXTURE_2D );
-
-		if ( !_depthTarget )
-			_depthTarget  = new Texture( GL_TEXTURE_2D );
-
 		if ( !_fbo )
 			_fbo = new Framebuffer();
 
@@ -238,5 +226,274 @@ public:
 
 		fullScreenQuad->draw();
 		glEnable(GL_DEPTH_TEST);
+	}
+};
+
+
+class Part3 : public Mode
+{
+private:
+	Shader		*	_viewColor,
+				*	_viewDepth;
+	Shader *		_terrainShader;
+	Texture		*	_colorTarget,
+				*	_depthTarget;
+	Framebuffer *	_fbo,
+				*	_fboDepth;
+	glm::mat4		_ortho;
+
+public:
+	Part3(): _terrainShader(NULL), _viewColor(NULL), _viewDepth(NULL),
+			 _colorTarget(NULL), _depthTarget(NULL), _fbo(NULL), _fboDepth(NULL)
+	{}
+
+	~Part3()
+	{
+		unload();
+	}
+
+	void load()
+	{
+		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
+		
+		_ortho = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );
+
+		program->load( _viewColor,		"shaders/view_color.prg" );
+		program->load( _viewDepth,		"shaders/view_lineardepth_u32.prg" );
+		program->load( _terrainShader,	"shaders/tess_quad_lineardepth_u32.prg" );
+
+		if ( !_colorTarget )
+			_colorTarget  = new Texture( GL_TEXTURE_2D );
+
+		if ( !_depthTarget )
+			_depthTarget  = new Texture( GL_TEXTURE_2D );
+		
+		_colorTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RED_INTEGER, GL_R32UI, GL_INT );
+
+		if ( !_fbo )
+			_fbo = new Framebuffer();
+
+		_fbo->bind();
+		_fbo->attach( _colorTarget, GL_COLOR_ATTACHMENT0 );
+		_fbo->checkStatus();
+		_fbo->unbind();
+		
+		if ( !_fboDepth )
+			_fboDepth = new Framebuffer();
+			
+		_fboDepth->bind();
+		_fboDepth->attach( _depthTarget, GL_COLOR_ATTACHMENT0 );
+		_fboDepth->checkStatus();
+		_fboDepth->unbind();
+		
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+	}
+
+	void unload()
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		
+		delete _terrainShader;		_terrainShader = NULL;
+		delete _viewColor;			_viewColor = NULL;
+		delete _viewDepth;			_viewDepth = NULL;
+		delete _colorTarget;		_colorTarget = NULL;
+		delete _depthTarget;		_depthTarget = NULL;
+		delete _fbo;				_fbo = NULL;
+		delete _fboDepth;			_fboDepth = NULL;
+	}
+
+	void draw(int i)
+	{
+		// clear depth buffer
+		_fboDepth->bind();
+		_fbo->setRenderTargets( RTF_COLOR0 );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
+		
+		const glm::uvec4	depthClear = glm::uvec4(0xFFFFFFFF);
+		glClearBufferuiv( GL_COLOR, 0, glm::value_ptr(depthClear) );
+		
+		_fboDepth->unbind();
+	
+	
+		_fbo->bind();
+		_fbo->setRenderTargets( RTF_COLOR0 );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
+		
+		const glm::vec4	colorClear = glm::vec4( 0.f, 0.8f, 1.0f, 0.f );
+		glClearBufferfv( GL_COLOR, 0, glm::value_ptr(colorClear) );
+
+		program->bind( _terrainShader );
+		
+		_terrainShader->setUniformFloat(  "unFarPlane",  3000.f );
+		_terrainShader->setUniformInt( "unDepthBuffer", 0 );
+		
+		_depthTarget->bindImage( 0, G_R32UI, GL_READ_WRITE );
+
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
+		
+		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
+		glEnable( GL_CULL_FACE );
+
+		if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+		gridMesh->draw();
+		if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
+	
+		glDisable( GL_CULL_FACE );
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		
+		_depthTarget->unbindImage( 0 );
+
+		_fbo->unbind();
+
+
+		program->getStates().mvp = _ortho;
+
+		program->bind( (i&1) ? _viewDepth : _viewColor );
+
+		_colorTarget->bind( TEX_DIFFUSE );
+		_depthTarget->bind( TEX_DEPTH );
+
+		fullScreenQuad->draw();
+	}
+};
+
+
+class Part4 : public Mode
+{
+private:
+	Shader		*	_viewColor,
+				*	_viewDepth;
+	Shader *		_terrainShader;
+	Texture		*	_colorTarget,
+				*	_depthTarget;
+	Framebuffer *	_fbo,
+				*	_fboDepth;
+	glm::mat4		_ortho;
+
+public:
+	Part4(): _terrainShader(NULL), _viewColor(NULL), _viewDepth(NULL),
+			 _colorTarget(NULL), _depthTarget(NULL), _fbo(NULL), _fboDepth(NULL)
+	{}
+
+	~Part4()
+	{
+		unload();
+	}
+
+	void load()
+	{
+		gridMesh->createGrid( gridSize, 1.f / float(gridSize), 4 );
+		
+		_ortho = glm::ortho( -1.f, 1.f, -1.f, 1.f, -1.f, 1.f );
+
+		program->load( _viewColor,		"shaders/view_color.prg" );
+		program->load( _viewDepth,		"shaders/view_lineardepth_f64.prg" );
+		program->load( _terrainShader,	"shaders/tess_quad_lineardepth_f64.prg" );
+
+		if ( !_colorTarget )
+			_colorTarget  = new Texture( GL_TEXTURE_2D );
+
+		if ( !_depthTarget )
+			_depthTarget  = new Texture( GL_TEXTURE_2D );
+		
+		_colorTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE );
+		_depthTarget->create2D( NULL, sys.getWndSize().x, sys.getWndSize().y, GL_RED_INTEGER, GL_RG32UI, GL_INT );
+
+		if ( !_fbo )
+			_fbo = new Framebuffer();
+
+		_fbo->bind();
+		_fbo->attach( _colorTarget, GL_COLOR_ATTACHMENT0 );
+		_fbo->checkStatus();
+		_fbo->unbind();
+		
+		if ( !_fboDepth )
+			_fboDepth = new Framebuffer();
+			
+		_fboDepth->bind();
+		_fboDepth->attach( _depthTarget, GL_COLOR_ATTACHMENT0 );
+		_fboDepth->checkStatus();
+		_fboDepth->unbind();
+		
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+	}
+
+	void unload()
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		
+		delete _terrainShader;		_terrainShader = NULL;
+		delete _viewColor;			_viewColor = NULL;
+		delete _viewDepth;			_viewDepth = NULL;
+		delete _colorTarget;		_colorTarget = NULL;
+		delete _depthTarget;		_depthTarget = NULL;
+		delete _fbo;				_fbo = NULL;
+		delete _fboDepth;			_fboDepth = NULL;
+	}
+
+	void draw(int i)
+	{
+		// clear depth buffer
+		_fboDepth->bind();
+		_fbo->setRenderTargets( RTF_COLOR0 );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
+		
+		const glm::uvec4	depthClear = glm::uvec4(0xFFFFFFFF);
+		glClearBufferuiv( GL_COLOR, 0, glm::value_ptr(depthClear) );
+		
+		_fboDepth->unbind();
+	
+	
+		_fbo->bind();
+		_fbo->setRenderTargets( RTF_COLOR0 );
+		glViewport( 0, 0, sys.getWndSize().x, sys.getWndSize().y );
+		
+		const glm::vec4	colorClear = glm::vec4( 0.f, 0.8f, 1.0f, 0.f );
+		glClearBufferfv( GL_COLOR, 0, glm::value_ptr(colorClear) );
+
+		program->bind( _terrainShader );
+		
+		_terrainShader->setUniformFloat(  "unFarPlane",  3000.f );
+		_terrainShader->setUniformInt( "unDepthBuffer", 0 );
+		
+		glm::dmat4	d_mvp = glm::dmat4( program->getStates().mvp );
+		glUniformMatrix4dv( _terrainShager->getLoc("unMVPMatrixDouble"), 1, GL_FALSE, glm::value_ptr(d_mvp) );
+		
+		_depthTarget->bindImage( 0, G_RG32UI, GL_READ_WRITE );
+
+		diffuseMap->bind( TEX_DIFFUSE );
+		heightMap->bind(  TEX_HEIGHT );
+		normalMap->bind(  TEX_NORMAL );
+		
+		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
+		glEnable( GL_CULL_FACE );
+
+		if ( updateQuery ) primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
+		gridMesh->draw();
+		if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }
+	
+		glDisable( GL_CULL_FACE );
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		
+		_depthTarget->unbindImage( 0 );
+
+		_fbo->unbind();
+
+
+		program->getStates().mvp = _ortho;
+
+		program->bind( (i&1) ? _viewDepth : _viewColor );
+
+		_colorTarget->bind( TEX_DIFFUSE );
+		_depthTarget->bind( TEX_DEPTH );
+
+		fullScreenQuad->draw();
 	}
 };
