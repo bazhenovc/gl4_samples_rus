@@ -30,10 +30,8 @@ in vec2		vTexcoord;
 
 void main()
 {
-	double	depth = unpackDouble(texture( unDepthMap, vTexcoord ).rg);
-	
+	double	depth = packDouble2x32(texture( unDepthMap, vTexcoord ).rg);
 	outColor = vec4(depth);
-	//outColor = depth > 0.01 && depth < 1.0 ? vec4(depth,0.5,0.0,0.0) : vec4(0.0,depth,0.5,0.0);
 }
 
 --eof

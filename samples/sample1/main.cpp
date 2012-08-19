@@ -106,6 +106,9 @@ void shutdown()
 
 void loadMode(int i)
 {
+	if ( i >= count_of(allModes) )
+		return;
+
 	currentMode->unload();
 	currentMode = allModes[ i ];
 	currentMode->load();

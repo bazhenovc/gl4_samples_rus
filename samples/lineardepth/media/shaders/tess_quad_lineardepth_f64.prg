@@ -1,6 +1,7 @@
 /*
 	Уровень тесселяции меняется в зависимости от расстояния до камеры.
 	Невидимые патчи отсекаются.
+	используется линейный буфер глубины формата float64 упакованый в uint32x2.
 */
 
 --vertex
@@ -184,10 +185,12 @@ void main()
 	vec2	texc		= Interpolate( Input, .vTexcoord1 );
 	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	
-	pos.xyz += dvec4( PCF( texc ) * norm * unHeightScale );
+	pos.xyz += dvec3( PCF( texc ) * norm * unHeightScale );
 	pos		 		=  unMVPMatrixDouble * pos;
 	gl_Position 	= vec4(pos);
-	Output.dDepth 	= pos.z / double(unFarPlane);// - 1.0;
+	gl_Position.z	= (gl_Position.z / unFarPlane - 1.0) * gl_Position.w;
+	Output.dDepth 	= pos.z / double(unFarPlane);	// linear
+	//Output.dDepth	= pos.z / pos.w;	// non-linear
 }
 
 
@@ -197,8 +200,8 @@ void main()
 
 layout(location = 0) out vec4	outColor;
 
-uniform sampler2D				unDiffuseMap;
-layout(rg32ui) uniform volatile uimage2D	unDepthBuffer;
+uniform sampler2D							unDiffuseMap;
+layout(rg32ui) coherent uniform uimage2D	unDepthBuffer;
 
 in	TEvalData {
 	vec3	vNormal;
@@ -211,13 +214,13 @@ in	TEvalData {
 void main()
 {
 	// depth test
-	ivec2	coord	= ivec2( gl_FragCoord.xy );	
-	double	depth	= unpackDouble( imageLoad( unDepthBuffer, coord ).rg );
+	ivec2	coord	= ivec2( gl_FragCoord.xy - 0.5 );
+	double	depth	= packDouble2x32( imageLoad( unDepthBuffer, coord ).rg );
 	
 	if ( Input.dDepth > depth )
 		discard;
 	
-	imageStorage( unDepthBuffer, coord, vec4(packDouble( Input.dDepth )) );
+	imageStore( unDepthBuffer, coord, uvec4(unpackDouble2x32( Input.dDepth ), 0, 0) );
 
 	
 	const vec3	const_norm 	= normalize( vec3( 0.f, 0.5f, 1.f ) );

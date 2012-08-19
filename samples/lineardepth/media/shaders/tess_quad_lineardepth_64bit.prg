@@ -1,6 +1,9 @@
 /*
 	Уровень тесселяции меняется в зависимости от расстояния до камеры.
 	Невидимые патчи отсекаются.
+	Используются 2 буфера глубины:
+	 - ближний нелинейный float32,
+	 - дальний линейный float32.
 */
 
 --vertex
@@ -113,7 +116,7 @@ void main()
 										Input[2].bInScreen, Input[3].bInScreen ) );
 		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel ),
 								 max( Input[2].fLevel, Input[3].fLevel ) );
-		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 0.0;
+		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 1.0;
 		
 		gl_TessLevelInner[0] = max_level * k;
 		gl_TessLevelInner[1] = max_level * k;
@@ -227,6 +230,15 @@ out	TGeomData {
 void Vertex(int i)
 {
 	gl_Position			= unMVPMatrices[gl_Layer] * gl_in[i].gl_Position;
+	Output.vNormal		= Input[i].vNormal;
+	Output.vTexcoord0	= Input[i].vTexcoord0;
+	Output.fLevel		= Input[i].fLevel;
+	EmitVertex();
+}
+
+void VertexLinear(int i)
+{
+	gl_Position			= unMVPMatrices[gl_Layer] * gl_in[i].gl_Position;
 	gl_Position.z 		= (gl_Position.z / unFarPlanes[gl_Layer] - 1.0) * gl_Position.w;
 	Output.vNormal		= Input[i].vNormal;
 	Output.vTexcoord0	= Input[i].vTexcoord0;
@@ -236,11 +248,11 @@ void Vertex(int i)
 
 void main()
 {
-	float	max_dist = max( Input[0].fDistance, max( Input[1].fDistance, Input[2].fDistance ) );
+	//float	max_dist = max( Input[0].fDistance, max( Input[1].fDistance, Input[2].fDistance ) );
 	//int		bits = Input[0].iLayerBits | Input[1].iLayerBits | Input[2].iLayerBits;
 	
 	//if ( (bits & 1) != 0 )
-	if ( max_dist < unFarPlanes[0]*1.01 )
+	//if ( max_dist < unFarPlanes[0]*1.1 )
 	{
 		gl_Layer = 0;
 		Vertex( 0 );
@@ -250,12 +262,12 @@ void main()
 	}
 	
 	//if ( (bits & 2) != 0 )
-	if ( max_dist >= unFarPlanes[0]*0.95 )
+	//if ( max_dist >= unFarPlanes[0]*0.9 )
 	{
 		gl_Layer = 1;
-		Vertex( 0 );
-		Vertex( 1 );
-		Vertex( 2 );
+		VertexLinear( 0 );
+		VertexLinear( 1 );
+		VertexLinear( 2 );
 		EndPrimitive();
 	}
 }

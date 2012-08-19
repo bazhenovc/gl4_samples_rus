@@ -1,6 +1,7 @@
 /*
 	Уровень тесселяции меняется в зависимости от расстояния до камеры.
 	Невидимые патчи отсекаются.
+	Используется линейный буфер глубины упакованный в формат uint32
 */
 
 --vertex
@@ -151,7 +152,6 @@ out	TEvalData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	float	fLevel;
-	float	fDepth;
 } Output;
 
 
@@ -186,7 +186,7 @@ void main()
 	
 	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
-	Output.fDepth = gl_Position.z / unFarPlane;// - 1.0;
+	gl_Position.z = (gl_Position.z / unFarPlane - 1.0) * gl_Position.w;
 }
 
 
@@ -197,21 +197,20 @@ void main()
 layout(location = 0) out vec4	outColor;
 
 uniform sampler2D				unDiffuseMap;
-layout(r32ui) uniform uimage2D	unDepthBuffer;
+layout(r32ui) coherent uniform uimage2D	unDepthBuffer;
 
 in	TEvalData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
 	float	fLevel;
-	float	fDepth;
 } Input;
 
 
 void main()
 {
 	// depth test
-	uint	new_depth	= uint( Input.fDepth * 0xFFFFFFFF + 0.5 );
-	ivec2	coord		= ivec2( gl_FragCoord.xy );
+	uint	new_depth	= uint( gl_FragCoord.z * 0xFFFFFFFF + 0.5 );
+	ivec2	coord		= ivec2( gl_FragCoord.xy - 0.5 );
 	
 	uint	last_depth	= imageAtomicMin( unDepthBuffer, coord, new_depth );
 	

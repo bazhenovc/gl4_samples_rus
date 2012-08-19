@@ -31,10 +31,10 @@ in vec2		vTexcoord;
 
 void main()
 {
-	vec4	color0 = texture( unDiffuseMap, vec3(vTexcoord,0.0) );// + vec4(0.5,0.0,0.0,0.0);
-	vec4	color1 = texture( unDiffuseMap, vec3(vTexcoord,1.0) );// + vec4(0.0,0.0,0.5,0.0);
+	vec4	color0 = texture( unDiffuseMap, vec3(vTexcoord,0.0) );
+	vec4	color1 = texture( unDiffuseMap, vec3(vTexcoord,1.0) );
 
-	//outColor = color1;
+	//outColor = color0;
 	outColor = color0.a == 0.0 ? color1 : color0;
 	outColor.a = 1.0;
 }

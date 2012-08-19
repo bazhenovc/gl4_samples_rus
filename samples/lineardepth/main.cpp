@@ -10,6 +10,7 @@ Mode *		currentMode		= NULL;
 Mesh *		gridMesh		= NULL;
 Mesh *		fullScreenQuad	= NULL;
 Texture *	diffuseMap		= NULL,
+		*	diffuseMap2		= NULL,
 		*	heightMap		= NULL,
 		*	normalMap		= NULL;
 Program *	program			= NULL;
@@ -21,13 +22,15 @@ int			modeIndex		= 0;
 int			currPart		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
+bool		polygonOffset	= false;
 bool		updateQuery		= true;
 float		camSpeed		= 0.025f;
+float		polygonsOffset	= -200.f;//0.001f;
 
 #include "program.h"
 #include "modes.h"
 
-Mode *		allModes[] = {	new Part1(), new Part2(), new Part3(), new Part4() };
+Mode *		allModes[] = { new Part0(), new Part1(), new Part2(), new Part3(), new Part4() };
 
 
 void init()
@@ -40,17 +43,24 @@ void init()
 	fullScreenQuad->makeQuad();
 
 	diffuseMap		= new Texture( GL_TEXTURE_2D );
+	diffuseMap2		= new Texture(GL_TEXTURE_2D);
 	heightMap		= new Texture( GL_TEXTURE_2D );
 	normalMap		= new Texture( GL_TEXTURE_2D );
 
 	diffuseMap->loadDDS( "textures/grass.dds" );
 	heightMap->loadDDS(  "textures/height.dds" );
 	normalMap->loadDDS(  "textures/normal.dds" );
+	diffuseMap2->loadDDS( "textures/dark_grass.dds" );
 
 	diffuseMap->bind();
 	diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
 	diffuseMap->setAnisotropy( 16 );
 	diffuseMap->unbind();
+
+	diffuseMap2->bind();
+	diffuseMap2->setWrap( GL_REPEAT, GL_REPEAT );
+	diffuseMap2->setAnisotropy( 16 );
+	diffuseMap2->unbind();
 
 	heightMap->bind();
 	heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
@@ -68,6 +78,7 @@ void init()
 
 	primitivesQuery	= new Query();
 
+	glPolygonOffset( 1.f, 1024.f );
 	//glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
 	glCullFace( GL_FRONT );
@@ -100,6 +111,9 @@ void shutdown()
 
 void loadMode(int i)
 {
+	if ( i >= count_of(allModes) )
+		return;
+
 	currentMode->unload();
 	currentMode = allModes[ i ];
 	currentMode->load();
@@ -126,8 +140,8 @@ void display()
 	if ( input.isKeyClick(']') )	program->getStates().heightScale--;
 
 	// left, right
-	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	program->getStates().gridScale -= 10.f;
-	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	program->getStates().gridScale += 10.f;
+	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	polygonsOffset -= 0.001f;
+	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	polygonsOffset += 0.001f;
 
 	// up, down
 	if ( input.isSpecKeyClick(GLUT_KEY_UP) )	camSpeed += 0.01f;
@@ -139,6 +153,7 @@ void display()
 
 	if ( input.isKeyClick('r') )	{ currentMode->unload();  currentMode->load(); }			// reload
 	if ( input.isKeyClick('p') )	wireframe = !wireframe;
+	if ( input.isKeyClick('o') )	polygonOffset = !polygonOffset;
 	
 	// 1..4
 	if ( input.isKey('1') )			modeIndex = 0;

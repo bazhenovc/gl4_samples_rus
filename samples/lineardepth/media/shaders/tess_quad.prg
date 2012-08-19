@@ -1,7 +1,7 @@
 /*
 	Уровень тесселяции меняется в зависимости от расстояния до камеры.
 	Невидимые патчи отсекаются.
-	Используется линейный буфер глубины формата float32.
+	Используется нелинейный буфер глубины формата float32.
 */
 
 --vertex
@@ -139,7 +139,6 @@ uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
 uniform float		unHeightScale;
-uniform float		unFarPlane;
 
 in TContData {
 	vec3	vNormal;
@@ -186,7 +185,6 @@ void main()
 	
 	pos.xyz += PCF( texc ) * norm * unHeightScale;
 	gl_Position = unMVPMatrix * pos;
-	gl_Position.z	= (gl_Position.z / unFarPlane - 1.0) * gl_Position.w;
 }
 
 

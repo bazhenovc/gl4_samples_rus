@@ -64,6 +64,14 @@ public:
 		return _proj;
 	}
 
+	inline glm::mat4 buildMVPMatrix(const glm::vec3 &pos) const {
+		return _proj * _view * glm::translate( _position - pos );
+	}
+
+	inline glm::mat4 buildMVMatrix(const glm::vec3 &pos) const {
+		return _view * glm::translate( _position - pos );
+	}
+
 	inline glm::vec3 const & position() const {
 		return _position;
 	}

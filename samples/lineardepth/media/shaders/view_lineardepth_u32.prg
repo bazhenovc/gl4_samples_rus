@@ -31,9 +31,7 @@ in vec2		vTexcoord;
 void main()
 {
 	float	depth = float(texture( unDepthMap, vTexcoord ).r) / float(0xFFFFFFFF);
-	
 	outColor = vec4(depth);
-	//outColor = depth > 0.01 && depth < 1.0 ? vec4(depth,0.5,0.0,0.0) : vec4(0.0,depth,0.5,0.0);
 }
 
 --eof

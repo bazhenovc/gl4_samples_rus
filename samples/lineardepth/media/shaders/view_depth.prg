@@ -32,7 +32,7 @@ void main()
 {
 	float	depth = texture( unDepthMap, vTexcoord ).r;
 	
-	outColor = vec4(depth);
+	outColor = vec4( pow( depth, 100.0 ) );
 }
 
 --eof

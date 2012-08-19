@@ -35,7 +35,7 @@ void main()
 	float	depth0 = texture( unDepthMap, vec3(vTexcoord,0.0) ).r;
 	float	depth1 = texture( unDepthMap, vec3(vTexcoord,1.0) ).r;
 
-	outColor = color0.a == 0.0 ? vec4( 0.1, depth1, 0.4, 1.0 ) : vec4( depth0, 0.3, 0.0, 1.0 );
+	outColor = color0.a == 0.0 ? vec4( 0.05, depth1, 0.2, 1.0 ) : vec4( depth0, 0.2, 0.0, 1.0 );
 }
 
 --eof
