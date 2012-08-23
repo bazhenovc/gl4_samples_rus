@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include <GL/glew.h>
+#include "HardwareBuffer.h"
 
 namespace framework
 {
@@ -45,7 +46,8 @@ public:
 	void create2D(const void* data, unsigned int w, unsigned int h,
 				  GLuint format = GL_RGBA,
 				  GLuint internalFormat = GL_RGBA,
-				  GLuint byteType = GL_UNSIGNED_BYTE);
+				  GLuint byteType = GL_UNSIGNED_BYTE,
+				  unsigned int levels = 0);
 
 	void subData2D(const void* data, unsigned int x, unsigned int y,
 				  unsigned int w, unsigned int h,
@@ -54,11 +56,14 @@ public:
 	void create3D(const void* data, unsigned int w, unsigned int h, unsigned int d,
 				  GLuint format = GL_RGBA,
 				  GLuint internalFormat = GL_RGBA,
-				  GLuint byteType = GL_UNSIGNED_BYTE);
+				  GLuint byteType = GL_UNSIGNED_BYTE,
+				  unsigned int levels = 0);
 
 	void subData3D(const void* data, unsigned int x, unsigned int y, unsigned int z,
 				  unsigned int w, unsigned int h, unsigned int d,
 				  GLuint format = GL_RGBA, GLuint byteType = GL_UNSIGNED_BYTE);
+
+	void createBuffer(HardwareBuffer *buf, GLenum internalFormat);
 
 	void generateMipmaps();
 

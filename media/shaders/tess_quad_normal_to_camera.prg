@@ -35,22 +35,9 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist, in vec3 norm)
 {
-#if 0
-	float	norm_to_cam = 1.0 - abs( dot( vec3(0.0,0.0,1.0), norm ) );
-#else
-#if 1
 	float	norm_to_cam = (	abs( dot( vec3( 1.0,0.0,0.0), norm ) ) +
-							abs( dot( vec3(-1.0,0.0,0.0), norm ) ) ) * 2.5;
-#else
-	float	norm_to_cam = (	abs( dot( vec3( 1.0,0.0,0.0), norm ) ) +
-							abs( dot( vec3(-1.0,0.0,0.0), norm ) ) ) * 1.25
-							+
-						  (	abs( dot( vec3(0.0, 1.0,0.0), norm ) ) +
-							abs( dot( vec3(0.0,-1.0,0.0), norm ) )
-							) * 0.25;
-#endif
-#endif
-	return clamp( unDetailLevel*unGridScale*0.05/dist * (norm_to_cam+0.3), 0.1, unMaxTessLevel );
+							abs( dot( vec3(-1.0,0.0,0.0), norm ) ) ) * 1.25;
+	return clamp( unDetailLevel*unGridScale*0.05/dist * (norm_to_cam+0.35), 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -62,7 +49,7 @@ void main()
 						  texture( unHeightMap, Output.vTexcoord1 ).r * unHeightScale, 1.0 ).xzyw;
 	Output.vScrCoords	= pos.xy / pos.w;
 	Output.vNormal		= normalize(texture( unNormalMap, Output.vTexcoord1 ).rbg * 2.0 - 1.0) * unNormalMatrix;
-	Output.fLevel		= Level( length(pos.xyz), Output.vNormal );
+	Output.fLevel		= Level( pos.z, Output.vNormal );
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 

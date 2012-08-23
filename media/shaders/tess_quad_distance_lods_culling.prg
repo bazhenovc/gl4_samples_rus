@@ -33,7 +33,7 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 1.0, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.05/dist - 2.0, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -46,7 +46,7 @@ void main()
 						  texture( unHeightMap, Output.vTexcoord1 ).r *
 						  Output.vNormal * unHeightScale, 1.0 );
 	Output.vScrCoords	= pos.xy / pos.w;
-	Output.fLevel		= Level( length(pos.xyz) );
+	Output.fLevel		= Level( pos.z );
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 

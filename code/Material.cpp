@@ -129,7 +129,58 @@ public:
 	}
 };
 
+
+class SamplerManager
+{
+private:
+	struct SamplerCache
+	{
+		Sampler	src;
+		GLuint	id;
+
+		SamplerCache(): src(), id(0) {}
+		SamplerCache(const Sampler &s, GLuint i): src(s), id(i) {}
+	};
+
+	std::vector< SamplerCache >		_samplers;
+
+public:
+	~SamplerManager()
+	{
+		for (size_t i = 0; i < _samplers.size(); ++i) {
+			glDeleteSamplers( 1, &_samplers[i].id );
+		}
+		_samplers.clear();
+	}
+
+	void getSampler(const Sampler &src, GLuint &id)
+	{
+		id = 0;
+
+		for (size_t i = 0; i < _samplers.size(); ++i)
+		{
+			if ( _samplers[i].src == src ) {
+				id = _samplers[i].id;
+				return;
+			}
+		}
+
+		glGenSamplers( 1, &id );
+		glSamplerParameteri( id, GL_TEXTURE_WRAP_S, src.wrapS );
+		glSamplerParameteri( id, GL_TEXTURE_WRAP_T, src.wrapT );
+		glSamplerParameteri( id, GL_TEXTURE_WRAP_R, src.wrapR );
+		glSamplerParameteri( id, GL_TEXTURE_MIN_FILTER, src.filterMin );
+		glSamplerParameteri( id, GL_TEXTURE_MAG_FILTER, src.filterMag );
+		glSamplerParameteri( id, GL_TEXTURE_MAX_ANISOTROPY_EXT, src.anisotrophy );
+
+		_samplers.push_back( SamplerCache( src, id ) );
+	}
+};
+
+
 static TextureManager	texMngr;
+static SamplerManager	sampMngr;
+
 
 
 Material::Material(): _ubo(0), _uboSize(0), _uboChanged(false)
@@ -146,18 +197,22 @@ Material::~Material()
 
 void Material::apply(Shader *shader, GLint uboBindingIndex)
 {
-	if ( _uboChanged )
+	if ( _ubo )
 	{
-		glBindBuffer( GL_UNIFORM_BUFFER, _ubo );
-		glBufferData( GL_UNIFORM_BUFFER, _uboSize, &_uboData[0], GL_STREAM_DRAW );
-		glBindBuffer( GL_UNIFORM_BUFFER, 0 );
-	}
+		if ( _uboChanged )
+		{
+			glBindBuffer( GL_UNIFORM_BUFFER, _ubo );
+			glBufferData( GL_UNIFORM_BUFFER, _uboSize, &_uboData[0], GL_STREAM_DRAW );
+			glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+		}
 
-	shader->bindUB( _uboName.c_str(), uboBindingIndex, _ubo );
+		shader->bindUB( _uboName.c_str(), uboBindingIndex, _ubo );
+	}
 
 	for (size_t i = 0; i < _textures.size(); ++i)
 	{
 		_textures[i].texture->bind( _textures[i].stage );
+		glBindSampler( _textures[i].stage, _textures[i].sampler );
 		shader->setUniformInt( _textures[i].uniform.c_str(), _textures[i].stage );
 	}
 }
@@ -178,23 +233,26 @@ void Material::createUB(const char *name, size_t size, const void *data)
 	}
 }
 
-bool Material::addTexture(Texture *tex, const char *uniform, int stage)
+bool Material::addTexture(Texture *tex, const char *uniform, int stage, GLuint sampler)
 {
 	if ( stage == -1 ) {
 		stage = _textures.size();
 	}
 
-	_textures.push_back( MtrTexture( tex, uniform, stage ) );
+	_textures.push_back( MtrTexture( tex, uniform, stage, sampler ) );
 	return true;
 }
 
-bool Material::addTexture(const char *filename, const char *uniform, int stage, GLenum type)
+bool Material::addTexture(const char *filename, const char *uniform, int stage, GLenum type, const Sampler &samp)
 {
 	Texture	*	tex = NULL;
 
 	if ( texMngr.load( filename, tex, type ) )
 	{
-		return addTexture( tex, uniform, stage );
+		GLuint	samplerID = 0;
+
+		sampMngr.getSampler( samp, samplerID );
+		return addTexture( tex, uniform, stage, samplerID );
 	}
 	return false;
 }

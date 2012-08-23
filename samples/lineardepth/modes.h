@@ -340,6 +340,7 @@ public:
 		_terrainShader->setUniformMatrix( "unMVPMatrices[0]", _proj1 * cam.buildMVMatrix(glm::vec3(0.f,polygonsOffset,0.f)) );
 		_terrainShader->setUniformMatrix( "unMVPMatrices[1]", _proj2 * cam.buildMVMatrix(glm::vec3(0.f,polygonsOffset,0.f)) );
 		_terrainShader->setUniformFloat(  "unHeightScale", program->getStates().heightScale * 3.f );
+		_terrainShader->setUniformMatrix( "unMVPMatrix", cam.buildMVPMatrix( glm::vec3(0.f,polygonsOffset,0.f) ) );
 		gridMesh->draw();
 
 		if ( updateQuery ) { primitivesQuery->end();  updateQuery = false; }

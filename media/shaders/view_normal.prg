@@ -30,7 +30,8 @@ in vec2		vTexcoord;
 
 void main()
 {
-	outColor = texture( unNormalMap, vTexcoord );
+	vec3	norm = texture( unNormalMap, vTexcoord ).rgb;
+	outColor.rgb = all( equal( norm, vec3(1.0) ) ) ? vec3(0.0) : norm;
 	outColor.a = 1.0;
 }
 

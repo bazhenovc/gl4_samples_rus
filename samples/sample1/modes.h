@@ -110,6 +110,9 @@ public:
 
 		program->bind( shader );
 
+		if ( i == VIEW_FOG )
+			shader->setUniformMatrix( "unProjInvMatrix", glm::inverse(cam.toProjMatrix()) );
+
 		glDisable(GL_DEPTH_TEST);
 		_colorTarget->bind(  TEX_DIFFUSE );
 		_normalTarget->bind( TEX_NORMAL );
@@ -447,6 +450,8 @@ public:
 		diffuseMap->bind( TEX_DIFFUSE );
 		heightMap->bind(  TEX_HEIGHT );
 		normalMap->bind(  TEX_NORMAL );
+
+		_shader->setUniformMatrix( "unNormalMatrix", glm::inverse( glm::mat3( cam.toMVMatrix() ) ) );
 
 		gridMesh->draw();
 	}

@@ -116,7 +116,7 @@ namespace framework
 	{
 		glSwapInterval( i );
 	}
-	/*
+	
 	void System::clearGLErrors()
 	{
 		while ( glGetError() != GL_NO_ERROR ) {}
@@ -132,20 +132,20 @@ namespace framework
 		static const char *	errors[] = { "GL_INVALID_ENUM",
 										 "GL_INVALID_VALUE",
 										 "GL_INVALID_OPERATION",
-										 "GL_INVALID_FRAMEBUFFER_OPERATION",
-										 "GL_OUT_OF_MEMORY" };
+										 "GL_OUT_OF_MEMORY",
+										 "GL_INVALID_FRAMEBUFFER_OPERATION" };
 
 		switch ( err )
 		{
 			case GL_INVALID_ENUM:					err = 0;	break;
 			case GL_INVALID_VALUE:					err = 1;	break;
 			case GL_INVALID_OPERATION:				err = 2;	break;
-			case GL_INVALID_FRAMEBUFFER_OPERATION:	err = 3;	break;
-			case GL_OUT_OF_MEMORY:					err = 4;	break;
+			case GL_OUT_OF_MEMORY:					err = 3;	break;
+			case GL_INVALID_FRAMEBUFFER_OPERATION:	err = 4;	break;
 			default:	logPrint("GL error: %i", err );			return false;
 		}
 
 		logPrint("GL error: %s\n", errors[err] );
 		return false;
-	}*/
+	}
 }

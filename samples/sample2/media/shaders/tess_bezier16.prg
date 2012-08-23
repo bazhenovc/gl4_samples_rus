@@ -34,7 +34,7 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel/dist - 2.0, 1.0, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -43,7 +43,7 @@ void main()
 	vec2	texc		= inPosition;
 	gl_Position			= unMVPMatrix * vec4( inPosition * unGridScale,
 						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
-	Output.fLevel		= Level( length(gl_Position.xyz) );
+	Output.fLevel		= Level( gl_Position.z );
 	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
 	Output.vScrCoords	= gl_Position.xy / gl_Position.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
@@ -106,7 +106,7 @@ bool QuadInScreen()
 
 float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 0.005, 0.1, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 4.0, 0.1, unMaxTessLevel );
 }
 
 void main()
@@ -115,7 +115,7 @@ void main()
 	{
 		bool	in_screen = any( bvec4( Input[0].bInScreen,  Input[3].bInScreen,
 										Input[12].bInScreen, Input[15].bInScreen ) );
-		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 1.0;
+		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 0.0;
 		
 		gl_TessLevelOuter[0] = Level( Input[0],  Input[4],  Input[8],  Input[12] ) * k;
 		gl_TessLevelOuter[1] = Level( Input[0],  Input[1],  Input[2],  Input[3]  ) * k;

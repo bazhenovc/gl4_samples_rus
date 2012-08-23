@@ -18,14 +18,12 @@ public:
 	struct States
 	{
 		glm::mat4	mvp;
-		glm::mat4	invProj;
-		glm::mat3	norm;
 		float		gridScale;
 		float		maxTessLevel;
 		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-1000.f), detailLevel(20.f) {}
+		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-1000.f), detailLevel(10.f) {}
 	};
 
 private:
@@ -62,13 +60,11 @@ void Program::setUniforms(Shader *shader)
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 	if ( _states.detailLevel < 0.f )	_states.detailLevel = 0.f;
 
-	shader->setUniformMatrix( "unMVPMatrix",	 _states.mvp );
-	shader->setUniformMatrix( "unProjInvMatrix", _states.invProj );
-	shader->setUniformMatrix( "unNormalMatrix",	 _states.norm );
-	shader->setUniformFloat( "unGridScale"),	 _states.gridScale );
-	shader->setUniformFloat( "unMaxTessLevel"),	 _states.maxTessLevel );
-	shader->setUniformFloat( "unHeightScale"),	-_states.heightScale );
-	shader->setUniformFloat( "unDetailLevel"),	 _states.detailLevel );
+	shader->setUniformMatrix( "unMVPMatrix",		 _states.mvp );
+	shader->setUniformFloat( "unGridScale",		 _states.gridScale );
+	shader->setUniformFloat( "unMaxTessLevel",	 _states.maxTessLevel );
+	shader->setUniformFloat( "unHeightScale",	-_states.heightScale );
+	shader->setUniformFloat( "unDetailLevel",	 _states.detailLevel );
 }
 
 bool Program::load(Shader *&shader, const char *fileName) const

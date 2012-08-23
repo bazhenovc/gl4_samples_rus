@@ -14,9 +14,9 @@ out vec2 fs_texcoord;
 
 void main()
 {
-  fs_normal = in_normal;
+	fs_normal = in_normal.yzx * -1.0;//.yzx;
 	fs_texcoord = in_texcoord;
-	gl_Position = mvp * vec4(in_vertex, 1.0);
+	gl_Position = mvp * vec4(in_vertex, 1.0).yzxw;
 }
 
 --fragment
@@ -31,7 +31,8 @@ layout (location = 0) out vec4 color;
 
 void main()
 {
-	color = texture(diffuse, fs_texcoord);
+	//color = texture(diffuse, fs_texcoord);
+	color = vec4( (fs_normal + 1.0) * 0.5, 1.0 );
 }
 
 --eof

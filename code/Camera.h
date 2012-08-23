@@ -49,6 +49,8 @@ public:
 
 	inline void init(float fovY, float aspect, float nearPlane, float farPlane, const glm::vec3 &pos = glm::vec3(0.f)) {
 		_proj = glm::perspective( fovY, aspect, nearPlane, farPlane );
+		_view = glm::mat4();
+		_orientation = glm::quat();
 		_position = pos;
 	}
 

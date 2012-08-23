@@ -136,12 +136,12 @@ void display()
 	if ( input.isKeyClick('.') )	program->getStates().detailLevel++;
 
 	// [ ]
-	if ( input.isKeyClick('[') )	program->getStates().heightScale++;
-	if ( input.isKeyClick(']') )	program->getStates().heightScale--;
+	if ( input.isKeyClick('[') )	program->getStates().heightScale += 0.2f;
+	if ( input.isKeyClick(']') )	program->getStates().heightScale -= 0.2f;
 
 	// left, right
-	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	polygonsOffset -= 0.001f;
-	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	polygonsOffset += 0.001f;
+	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	polygonsOffset -= 10.0f;
+	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	polygonsOffset += 10.0f;
 
 	// up, down
 	if ( input.isSpecKeyClick(GLUT_KEY_UP) )	camSpeed += 0.01f;

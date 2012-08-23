@@ -10,6 +10,7 @@
 #include "Framebuffer.h"
 #include "Camera.h"
 #include "Query.h"
+#include "Material.h"
 
 namespace framework
 {
@@ -48,8 +49,8 @@ public:
 
 	static void swapInterval(int i);
 
-	//static void clearGLErrors();
-	//static bool checkGLError();
+	static void clearGLErrors();
+	static bool checkGLError();
 };
 
 }

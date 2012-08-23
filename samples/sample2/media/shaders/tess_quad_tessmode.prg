@@ -16,15 +16,15 @@ out	TVertData {
 } Output;
 
 
-float Level(in vec2 pos)
+float Level(float dist)
 {
-	return clamp( distance( pos, vec2(0.5) ) * unDetailLevel * unMaxTessLevel, 0.1, unMaxTessLevel );
+	return clamp( unDetailLevel*0.1/dist - 2.0, 0.1, unMaxTessLevel );
 }
 
 void main()
 {
-	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 );
-	Output.fLevel	= Level( inPosition );
+	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 ); //.xzyw;
+	Output.fLevel	= Level( distance( inPosition, vec2(0.5) ) );
 }
 
 
@@ -40,10 +40,6 @@ layout(vertices = 4) out;
 in	TVertData {
 	float	fLevel;
 } Input[];
-
-out TContData {
-	float	fLevel;
-} Output[];
 
 
 void main()
@@ -61,7 +57,6 @@ void main()
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
-	Output[I].fLevel		= Input[I].fLevel;
 }
 
 
@@ -74,14 +69,6 @@ layout(quads, SPACING, ccw) in;
 
 uniform mat4	unMVPMatrix;
 
-in TContData {
-	float	fLevel;
-} Input[];
-
-out	TEvalData {
-	float	fLevel;
-} Output;
-
 
 #define Interpolate( a, p ) \
 	( mix(	mix( a[0] p, a[1] p, gl_TessCoord.x ), \
@@ -90,8 +77,7 @@ out	TEvalData {
 	
 void main()
 {
-	gl_Position		= unMVPMatrix * Interpolate( gl_in, .gl_Position );
-	Output.fLevel	= Interpolate( Input, .fLevel );
+	gl_Position = unMVPMatrix * Interpolate( gl_in, .gl_Position );
 }
 
 
@@ -102,15 +88,11 @@ void main()
 layout(location = 0) out vec4	outColor;
 layout(location = 1) out vec4	outNormal;
 
-in	TEvalData {
-	float	fLevel;
-} Input;
-
 
 void main()
 {
-	outColor	= vec4( 1.0 );
-	outNormal	= vec4( vec3(0.0), Input.fLevel );
+	outColor = vec4(1.0);
+	outNormal = vec4(1.0);
 }
 
 --eof

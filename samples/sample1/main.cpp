@@ -79,7 +79,7 @@ void init()
 	glCullFace( GL_FRONT );
 	sys.swapInterval( 0 );
 	
-	cam.init( 45.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
+	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
 			  1.f, 3000.0f,
 			  glm::vec3(	-program->getStates().gridScale * 0.5f,
 							 program->getStates().heightScale * 0.1f,
@@ -179,9 +179,7 @@ void display()
 				(input.isKey('d') - input.isKey('a')) * time_delta,
 				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );
 
-	program->getStates().mvp		 = cam.toMatrix();
-	program->getStates().norm	 = glm::inverse( glm::mat3( cam.toMVMatrix() ) );
-	program->getStates().invProj = glm::inverse( cam.toProjMatrix() );
+	program->getStates().mvp	 = cam.toMatrix();
 
 	currentView->bind();
 	glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );

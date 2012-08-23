@@ -14,7 +14,9 @@ namespace framework
  */
 enum BufferType {
     BT_VERTEX = GL_ARRAY_BUFFER,
-    BT_INDEX = GL_ELEMENT_ARRAY_BUFFER
+    BT_INDEX = GL_ELEMENT_ARRAY_BUFFER,
+	BT_TEXTURE = GL_TEXTURE_BUFFER,
+	BT_UNIFORM = GL_UNIFORM_BUFFER,
 };
 /**
  This flag determines how do we use our buffer
@@ -148,6 +150,10 @@ public:
 	 */
 	inline size_t getPtrSize(void) const {
 		return _ptrsize;
+	}
+
+	inline GLuint getID() const {
+		return _id;
 	}
 
 	/**

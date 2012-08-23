@@ -89,6 +89,31 @@ struct RenderState
 };
 
 
+
+struct Sampler
+{
+	GLenum		wrapS,
+				wrapT,
+				wrapR;
+	GLenum		filterMin,
+				filterMag;
+	char		anisotrophy;
+
+	Sampler():
+		wrapS(GL_CLAMP_TO_EDGE), wrapT(GL_CLAMP_TO_EDGE), wrapR(GL_CLAMP_TO_EDGE),
+		filterMin(GL_LINEAR), filterMag(GL_LINEAR), anisotrophy(0) {}
+
+	Sampler(GLenum wS, GLenum wT, GLenum wR, GLenum fMin, GLenum fMag, char a):
+		wrapS(wS), wrapT(wT), wrapR(wR), filterMin(fMin), filterMag(fMag), anisotrophy(a) {}
+
+	bool operator == (const Sampler &right) const {
+		return ( this->wrapS == right.wrapS && this->wrapT == right.wrapT && this->wrapR == right.wrapR && 
+				 this->filterMin == right.filterMin && this->filterMag == right.filterMag &&
+				 this->anisotrophy == right.anisotrophy );
+	}
+};
+
+
 class Material
 {
 private:
@@ -97,9 +122,10 @@ private:
 		Texture *	texture;
 		std::string	uniform;
 		int			stage;
+		GLuint		sampler;
 
-		MtrTexture(): texture(NULL), uniform(), stage(-1) {}
-		MtrTexture(Texture *t, const char *u, int s): texture(t), uniform(u), stage(s) {}
+		MtrTexture(): texture(NULL), uniform(), stage(-1), sampler(0) {}
+		MtrTexture(Texture *t, const char *u, int unit, GLuint samp): texture(t), uniform(u), stage(unit), sampler(samp) {}
 	};
 
 	std::vector<MtrTexture>	_textures;
@@ -116,8 +142,8 @@ public:
 	void apply(Shader *shader, GLint uboBindingIndex = 0);
 	void createUB(const char *name, size_t size, const void *data = NULL);
 
-	bool addTexture(Texture *tex, const char *uniform, int stage = -1);
-	bool addTexture(const char *filename, const char *uniform, int stage, GLenum type = GL_TEXTURE_2D);
+	bool addTexture(Texture *tex, const char *uniform, int stage = -1, GLuint sampler = 0);
+	bool addTexture(const char *filename, const char *uniform, int stage, GLenum type = GL_TEXTURE_2D, const Sampler &samp = Sampler());
 
 	template <typename T>
 	T & getData()

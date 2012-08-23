@@ -37,7 +37,7 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 1.0, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.05/dist - 2.0, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -51,7 +51,7 @@ void main()
 						  Output.vNormal * unHeightScale, 1.0 );
 	Output.vScrCoords	= pos.xy / pos.w;
 	Output.fDistance	= pos.z * 0.5;
-	Output.fLevel		= Level( length(pos.xyz) );
+	Output.fLevel		= Level( pos.z );
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 
@@ -116,7 +116,7 @@ void main()
 										Input[2].bInScreen, Input[3].bInScreen ) );
 		float	max_level = max( max( Input[0].fLevel, Input[1].fLevel ),
 								 max( Input[2].fLevel, Input[3].fLevel ) );
-		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 1.0;
+		float	k = ( in_screen || QuadInScreen() ) ? 1.0 : 0.0;
 		
 		gl_TessLevelInner[0] = max_level * k;
 		gl_TessLevelInner[1] = max_level * k;
@@ -204,7 +204,7 @@ void main()
 
 //-----------------------------------------------------------------------------
 --geometry
-#version 330 core
+#version 420 core
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 6) out;
@@ -248,11 +248,11 @@ void VertexLinear(int i)
 
 void main()
 {
-	//float	max_dist = max( Input[0].fDistance, max( Input[1].fDistance, Input[2].fDistance ) );
+	float	max_dist = max( Input[0].fDistance, max( Input[1].fDistance, Input[2].fDistance ) );
 	//int		bits = Input[0].iLayerBits | Input[1].iLayerBits | Input[2].iLayerBits;
 	
 	//if ( (bits & 1) != 0 )
-	//if ( max_dist < unFarPlanes[0]*1.1 )
+	if ( max_dist < unFarPlanes[0]*1.1 )
 	{
 		gl_Layer = 0;
 		Vertex( 0 );
@@ -262,7 +262,7 @@ void main()
 	}
 	
 	//if ( (bits & 2) != 0 )
-	//if ( max_dist >= unFarPlanes[0]*0.9 )
+	if ( max_dist >= unFarPlanes[0]*0.9 )
 	{
 		gl_Layer = 1;
 		VertexLinear( 0 );
@@ -275,7 +275,7 @@ void main()
 
 //-----------------------------------------------------------------------------
 --fragment
-#version 330 core
+#version 420 core
 
 layout(location = 0) out vec4	outColor;
 

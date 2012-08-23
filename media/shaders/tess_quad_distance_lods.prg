@@ -24,7 +24,7 @@ out	TVertData {
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 1.0, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.05/dist - 2.0, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -36,7 +36,7 @@ void main()
 	vec4	pos			= unMVPMatrix * vec4( gl_Position.xyz +
 						  texture( unHeightMap, Output.vTexcoord1 ).r *
 						  Output.vNormal * unHeightScale, 1.0 );
-	Output.fLevel		= Level( length(pos.xyz) );
+	Output.fLevel		= Level( pos.z );
 }
 
 

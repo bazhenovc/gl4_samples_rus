@@ -37,7 +37,7 @@ void HardwareBuffer::copySubData(const void* data, size_t size, size_t ptrsize, 
 {
 	_size = size;
 	_ptrsize = ptrsize;
-	glBufferSubData(_type, size * ptrsize, offset, data);
+	glBufferSubData(_type, offset * ptrsize, size * ptrsize, data);
 }
 
 void* HardwareBuffer::map(BufferMap bm)

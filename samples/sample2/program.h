@@ -24,7 +24,7 @@ public:
 		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-800.f), detailLevel(6000.f) {}
+		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-800.f), detailLevel(20.f) {}
 	};
 
 private:
@@ -59,7 +59,7 @@ void Program::setUniforms(Shader *shader)
 {
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 
-	shader->setUniformMatrix( "unMVPMatrix",	 _states.mvp );
+	shader->setUniformMatrix( "unMVPMatrix",		 _states.mvp );
 	shader->setUniformMatrix( "unNormalMatrix",	 _states.norm );
 	shader->setUniformFloat( "unGridScale",		 _states.gridScale );
 	shader->setUniformFloat( "unMaxTessLevel",	 _states.maxTessLevel );
