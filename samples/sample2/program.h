@@ -21,7 +21,7 @@ public:
 		float		detailLevel;
 		float		maxTessLevel;
 
-		States(): maxTessLevel(12.f), detailLevel(20.f) {}
+		States(): maxTessLevel(12.f), detailLevel(8.f) {}
 	};
 
 private:

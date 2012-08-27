@@ -166,7 +166,7 @@ void timerFunc()
 int main(int argc, char** argv)
 {
 	sys.setOnTimer( timerFunc );
-	sys.initGLUT( argc, argv, display, init, "Sample2, part1", 800, 600 );//1024, 768 );
+	sys.initGLUT( argc, argv, display, init, "Sample2, part1", 1024, 768 );
 	shutdown();
 	return 0;
 }

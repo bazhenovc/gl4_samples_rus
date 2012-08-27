@@ -7,9 +7,9 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float	unGridScale		= 100.0;
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unDetailLevel	= 1000.0;
+uniform float	unGridScale;
+uniform float	unMaxTessLevel;
+uniform float	unDetailLevel;
 
 out	TVertData {
 	float	fLevel;
@@ -23,7 +23,7 @@ float Level(float dist)
 
 void main()
 {
-	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 ); //.xzyw;
+	gl_Position		= vec4( inPosition * unGridScale, 0.0, 1.0 );
 	Output.fLevel	= Level( distance( inPosition, vec2(0.5) ) );
 }
 

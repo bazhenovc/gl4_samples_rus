@@ -34,18 +34,19 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel*unGridScale*0.4/dist - 2.0, 1.0, unMaxTessLevel+3.0 );
+	return clamp( unDetailLevel*unGridScale*0.2/dist - 2.0, 1.0, unMaxTessLevel+3.0 );
 }
 
 void main()
 {
 	Output.vTexcoord0	= inPosition * 100.0;
-	ivec2	texc		= ivec2( inPosition * vec2(textureSize( unHeightMap, 0 ).xy) - 0.5 );
-	gl_Position			= unMVPMatrix * vec4( inPosition * unGridScale,
-						  texelFetch( unHeightMap, texc, 0 ).r * unHeightScale, 1.0 ).xzyw;
-	Output.fLevel		= Level( gl_Position.z );
-	Output.vNormal		= normalize( texelFetch( unNormalMap, texc, 0 ).rbg * 2.0 - 1.0 );
-	Output.vScrCoords	= gl_Position.xy / gl_Position.w;
+	vec2	texc		= inPosition;
+	gl_Position			= vec4( inPosition * unGridScale,
+						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
+	vec4	pos			= unMVPMatrix * gl_Position;
+	Output.fLevel		= Level( pos.z );
+	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
+	Output.vScrCoords	= pos.xy / pos.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 
@@ -82,6 +83,7 @@ out TContData {
 #define Level( _a, _b, _c, _d ) \
 	max( max( _a.fLevel, _d.fLevel ), ScreenSpaceLevel( _a.vScrCoords, _d.vScrCoords ) )
 
+
 vec4 Rect(in vec2 p0, in vec2 p1, in vec2 p2, in vec2 p3)
 {
 	return 	 vec4(	Min4( p0.x, p1.x, p2.x, p3.x ),
@@ -105,7 +107,7 @@ bool QuadInScreen()
 
 float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 8.0, 1.0, unMaxTessLevel+3.0 );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 4.0, 1.0, unMaxTessLevel+3.0 );
 }
 
 void main()
@@ -139,6 +141,9 @@ void main()
 
 layout(quads, equal_spacing, ccw) in;
 
+uniform mat4	unMVPMatrix;
+uniform float	unPositionBlend;
+
 in TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
@@ -158,29 +163,49 @@ out	TEvalData {
 	  _bu.w * (_bv.x * (_a[3] _p) + _bv.y * (_a[7] _p) + _bv.z * (_a[11] _p) + _bv.w * (_a[15] _p)) )
 	
 #define InterpolateQuad( _a, _p ) \
-	( mix(	mix( _a[0] _p, _a[1] _p, gl_TessCoord.x ), \
-			mix( _a[3] _p, _a[2] _p, gl_TessCoord.x ), \
+	( mix(	mix( (_a[0] _p), (_a[1] _p), gl_TessCoord.x ), \
+			mix( (_a[3] _p), (_a[2] _p), gl_TessCoord.x ), \
 			gl_TessCoord.y ) )
 			
 void main()
 {
-	vec4		u = vec4 ( 1.0, gl_TessCoord.x, gl_TessCoord.x * gl_TessCoord.x,
+	vec4		u  = vec4( 1.0, gl_TessCoord.x, gl_TessCoord.x * gl_TessCoord.x,
 								gl_TessCoord.x * gl_TessCoord.x * gl_TessCoord.x );
-	vec4		v = vec4 ( 1.0, gl_TessCoord.y, gl_TessCoord.y * gl_TessCoord.y,
+	vec4		v  = vec4( 1.0, gl_TessCoord.y, gl_TessCoord.y * gl_TessCoord.y,
 								gl_TessCoord.y * gl_TessCoord.y * gl_TessCoord.y );
-	const float	p = 3.0;
-	const mat4	b = mat4 (	 1.0,  0,      0.0, 0.0,
-							-p,    p,      0.0, 0.0,
-							 p,   -p*2.0,  p,   0.0,
-							-1.0,  p,     -p,   1.0 );
-	vec4		bu = b * u;
-	vec4		bv = b * v;
-
-	gl_Position			= Interpolate( gl_in, .gl_Position, bu, bv );
-	Output.vNormal		= Interpolate( Input, .vNormal, bu, bv );
+	vec4		du = vec4( 0.0, 1.0, 2.0 * u.x, 3.0 * u.y );
+	vec4		dv = vec4( 0.0, 1.0, 2.0 * v.x, 3.0 * v.y );
+	const mat4	b  = mat4( 1.0,  0.0,  0.0,  0.0,
+						  -3.0,  3.0,  0.0,  0.0,
+						   3.0, -6.0,  3.0,  0.0,
+						  -1.0,  3.0, -3.0,  1.0 );
+	vec4		bu  = b * u;
+	vec4		bv  = b * v;
+	vec4		bdu = b * du;
+	vec4		bdv = b * dv;
+	
+	// position
+	vec3	bz_pos		= Interpolate( gl_in, .gl_Position.xyz, bu, bv );
+	vec3	ln_pos		= mix(	mix( gl_in[0].gl_Position.xyz, gl_in[3].gl_Position.xyz, gl_TessCoord.x ),
+								mix( gl_in[12].gl_Position.xyz, gl_in[15].gl_Position.xyz, gl_TessCoord.x ),
+								gl_TessCoord.y );
+	vec3	blend_pos	= (1.0-unPositionBlend) * ln_pos + unPositionBlend * bz_pos;
+	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
+	
+	// normal
+	vec3	bz_norm0	= normalize( Interpolate( gl_in, .gl_Position.xyz, bdu, bv ) );
+	vec3	bz_norm1	= normalize( Interpolate( gl_in, .gl_Position.xyz, bu,  bdv ) );
+	vec3	bz_norm		= normalize( cross( bz_norm1, bz_norm0 ) );
+	vec3	ln_norm		= normalize( Interpolate( Input, .vNormal, bu, bv ) );
+	//Output.vNormal		= (1.0-unPositionBlend) * ln_norm +
+	//					  unPositionBlend * bz_norm;
+	Output.vNormal		= ln_norm;
+	
 	Output.vTexcoord0 	= Interpolate( Input, .vTexcoord0, bu, bv );
 	Output.fLevel		= mix( gl_TessLevelInner[0], InterpolateQuad( gl_TessLevelOuter, ),
 								distance( gl_TessCoord.xy, vec2(0.5) ) );
+								
+	
 }
 
 

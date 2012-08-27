@@ -132,6 +132,7 @@ public:
 	virtual void load() = 0;
 	virtual void unload() = 0;
 	virtual void draw(int) = 0;
+	virtual void getModeInfo(int, std::string &) = 0;	// TODO: return information of mode (keys, ...)
 };
 
 
@@ -209,6 +210,21 @@ public:
 		_grids[ i&1 ]->draw();
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		if ( i >= count_of(_shaders) )
+			return;
+	
+		static const char *	spacing[] = { "equal", "fractional_even", "fractional_odd" };
+		static const char	partInfo[] = "";
+		
+		info += partInfo;
+		info += "\nPatch: ";
+		info += i&1 ? "quad" : "triangle";
+		info += "\nSpacing: ";
+		info += spacing[i>>1];
+	}
 };
 
 
@@ -216,6 +232,7 @@ class Part2 : public Mode
 {
 private:
 	Shader	*	_pnTriangles,
+			*	_phong3Patches,
 			*	_bezier16Patches;
 	Texture *	_diffuseMap,
 			*	_heightMap,
@@ -224,11 +241,13 @@ private:
 			*	_grid16;
 	float		_gridScale;
 	float		_heightScale;
+	float		_fPositionBlend;
 
 public:
-	Part2(): _pnTriangles(NULL), _bezier16Patches(NULL),
+	Part2(): _pnTriangles(NULL), _bezier16Patches(NULL), _phong3Patches(NULL),
 			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL),
-			_grid3(NULL), _grid16(NULL), _gridScale(2000.f), _heightScale(800.f)
+			_grid3(NULL), _grid16(NULL), _gridScale(2000.f),
+			_heightScale(800.f), _fPositionBlend(1.0)
 	{}
 
 	~Part2()
@@ -239,13 +258,13 @@ public:
 	void load()
 	{
 		program->load( _pnTriangles,     "shaders/tess_pn-triangles.prg" );
+		program->load( _phong3Patches,	 "shaders/tess_phong.prg" );
 		program->load( _bezier16Patches, "shaders/tess_bezier16.prg" );
 
 		_grid3	= new Mesh();
 		_grid16	= new Mesh();
 		
-		const int	gridSize = 255;
-
+		 const int	gridSize = 255;
 		_grid3->createGrid(  gridSize, 1.f / float(gridSize),  3 );
 		_grid16->createGrid( gridSize, 1.f / float(gridSize), 16 );
 
@@ -287,6 +306,7 @@ public:
 
 	void unload()
 	{
+		delete _phong3Patches;		_phong3Patches = NULL;
 		delete _pnTriangles;		_pnTriangles = NULL;
 		delete _bezier16Patches;	_bezier16Patches = NULL;
 		delete _grid3;				_grid3 = NULL;
@@ -298,17 +318,33 @@ public:
 
 	void draw(int i)
 	{
+		if ( i >= 3 )
+			return;
+
 		// [ ]
 		if ( input.isKeyClick('[') )	_heightScale--;
 		if ( input.isKeyClick(']') )	_heightScale++;
 
+		// v b
+		if ( input.isKeyClick('b') )	_fPositionBlend += 0.05f;
+		if ( input.isKeyClick('v') )	_fPositionBlend -= 0.05f;
+		_fPositionBlend = glm::clamp( _fPositionBlend, 0.f, 1.f );
 
-		Mesh	*	grid	= (i&1) ? _grid16 : _grid3;
-		Shader	*	shader	= (i&1) ? _bezier16Patches : _pnTriangles;
+		
+		Mesh	*	grid	= i == 0 ? _grid16 : _grid3;
+		Shader	*	shader	= NULL;
+		
+		switch ( i )
+		{
+			case 0 :	shader = _bezier16Patches;	break;
+			case 1 :	shader = _pnTriangles;		break;
+			case 2 :	shader = _phong3Patches;	break;
+		};
 
 		program->bind( shader );
-		shader->setUniformFloat(  "unGridScale",		 _gridScale );
-		shader->setUniformFloat(  "unHeightScale",	 _heightScale );
+		shader->setUniformFloat( "unGridScale",		_gridScale );
+		shader->setUniformFloat( "unHeightScale",	_heightScale );
+		shader->setUniformFloat( "unPositionBlend", _fPositionBlend );
 
 		_diffuseMap->bind( TEX_DIFFUSE );
 		_heightMap->bind(  TEX_HEIGHT );
@@ -320,115 +356,20 @@ public:
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
 	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		if ( i >= 3 )
+			return;
+	
+		static const char *	shaderInfo[] = { "Bezier patches", "PN-Triangles", "Phong patches" };
+		static const char	partInfo[] = "";
+		
+		info += partInfo;
+		info += "\nCurrent mode: ";
+		info += shaderInfo[i];
+	}
 };
-
-/*
-class Part2_1 : public Mode
-{
-private:
-	Shader	*	_terrainShader;
-	Texture *	_diffuseMap,
-			*	_heightMap,
-			*	_normalMap;
-	Mesh	*	_grid;
-
-public:
-	Part2_1(): _terrainShader(NULL), _grid(NULL),
-			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL)
-	{}
-
-	~Part2_1()
-	{
-		unload();
-	}
-
-	void load()
-	{
-		program->load( _terrainShader,	"shaders/tess_quad_tiling.prg" );
-
-		_grid	= new Mesh();
-		
-		const int	gridSize = 127;
-
-		_grid->createGrid( gridSize, 1.f / float(gridSize), 4 );
-		
-		_diffuseMap		= new Texture( GL_TEXTURE_2D_ARRAY );
-		_heightMap		= new Texture( GL_TEXTURE_2D );
-		_normalMap		= new Texture( GL_TEXTURE_2D );
-
-		_heightMap->loadDDS(  "textures/height.dds" );
-		_normalMap->loadDDS(  "textures/normal.dds" );
-
-		_diffuseMap->create3D( NULL, 512, 512, 16, GL_RGBA, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_UNSIGNED_BYTE, glm::log2(512.f) );
-		_diffuseMap->load2DLayerDDS( "textures/h0_a0.dds", 0 );
-		_diffuseMap->load2DLayerDDS( "textures/h0_a1.dds", 1 );
-		_diffuseMap->load2DLayerDDS( "textures/h1_a0.dds", 2 );
-		_diffuseMap->load2DLayerDDS( "textures/h2_a0.dds", 3 );
-		_diffuseMap->load2DLayerDDS( "textures/h3_a0.dds", 4 );
-		_diffuseMap->load2DLayerDDS( "textures/h4_a0.dds", 5 );
-		_diffuseMap->load2DLayerDDS( "textures/h5_a0.dds", 6 );
-		_diffuseMap->load2DLayerDDS( "textures/h5_a1.dds", 7 );
-		_diffuseMap->load2DLayerDDS( "textures/h5_a2.dds", 8 );
-		_diffuseMap->load2DLayerDDS( "textures/h5_a3.dds", 9 );
-		_diffuseMap->load2DLayerDDS( "textures/h6_a0.dds", 10 );
-		_diffuseMap->load2DLayerDDS( "textures/h6_a1.dds", 11 );
-		_diffuseMap->load2DLayerDDS( "textures/h6_a2.dds", 12 );
-		_diffuseMap->load2DLayerDDS( "textures/h7_a0.dds", 13 );
-		_diffuseMap->load2DLayerDDS( "textures/h7_a1.dds", 14 );
-
-		_diffuseMap->bind();
-		_diffuseMap->generateMipmaps();
-		_diffuseMap->setWrap( GL_REPEAT, GL_REPEAT, GL_CLAMP_TO_EDGE );
-		//_diffuseMap->setFilter( GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR );
-		_diffuseMap->setAnisotropy( 16 );
-		_diffuseMap->unbind();
-
-		_heightMap->bind();
-		_heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-		_heightMap->unbind();
-
-		_normalMap->bind();
-		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-		_normalMap->unbind();
-
-		if ( currPart != 2 ) {
-			program->getStates() = Program::States();
-			cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
-					  1.f, 3000.0f,
-					  glm::vec3(	-program->getStates().gridScale * 0.5f,
-									 program->getStates().heightScale * 0.1f,
-									-program->getStates().gridScale * 0.5f )
-					 );
-		}
-	}
-
-	void unload()
-	{
-		delete _terrainShader;		_terrainShader = NULL;
-		delete _grid;				_grid = NULL;
-		delete _diffuseMap;			_diffuseMap = NULL;
-		delete _heightMap;			_heightMap = NULL;
-		delete _normalMap;			_normalMap = NULL;
-	}
-
-	void draw(int)
-	{
-		program->bind( _terrainShader );
-
-		_diffuseMap->bind( TEX_DIFFUSE );
-		_heightMap->bind(  TEX_HEIGHT );
-		_normalMap->bind(  TEX_NORMAL );
-		
-		glEnable( GL_CULL_FACE );
-		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
-
-		_grid->draw();
-
-		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-		glDisable( GL_CULL_FACE );
-	}
-};*/
-
 
 
 class Part3 : public Mode
@@ -436,22 +377,25 @@ class Part3 : public Mode
 private:
 	struct Model
 	{
-		Shader	*		shader;
 		SceletalMesh *	mesh;
 		glm::vec3		pos;
 		glm::quat		orient;
 		float			scale;
 		bool			paused;
 
-		Model(): shader(NULL), mesh(NULL), scale(1.f), paused(false) {}
-		~Model() { delete shader;  delete mesh; }
+		Model(): mesh(NULL), scale(1.f), paused(false) {}
+		~Model() { delete mesh; }
 	};
-
-	Model	animModel;
+	
+	Shader	*	_shaders[2];
+	Model		_animModel;
+	float		_fPositionBlend;
 
 public:
-	Part3()
-	{}
+	Part3(): _fPositionBlend(1.f)
+	{
+		memset( _shaders, 0, sizeof(_shaders) );
+	}
 
 	~Part3()
 	{
@@ -468,69 +412,70 @@ public:
 
 	void load()
 	{
-		program->load( animModel.shader, "shaders/tess_mesh_pn-triangles.prg" );	
+		program->load( _shaders[0], "shaders/tess_mesh_pn-triangles.prg" );	
+		program->load( _shaders[1], "shaders/tess_mesh_phong.prg" );	
 
-		animModel.mesh = new SceletalMesh();
+		_animModel.mesh = new SceletalMesh();
 		
 #if 0
-		animModel.mesh->loadMD5Mesh( "pinky/pinky.md5mesh" );
-		animModel.mesh->loadMD5Anim( "pinky/pinky_idle1.md5anim" );
-		animModel.mesh->loadMD5Anim( "pinky/pinky_run.md5anim" );
-		animModel.mesh->loadMD5Anim( "pinky/pinky_attack.md5anim" );
+		_animModel.mesh->loadMD5Mesh( "pinky/pinky.md5mesh" );
+		_animModel.mesh->loadMD5Anim( "pinky/pinky_idle1.md5anim" );
+		_animModel.mesh->loadMD5Anim( "pinky/pinky_run.md5anim" );
+		_animModel.mesh->loadMD5Anim( "pinky/pinky_attack.md5anim" );
 #endif
 
-#if 1
-		animModel.mesh->loadMD5Mesh( "qshambler/qshambler.md5mesh" );
-		animModel.mesh->loadMD5Anim( "qshambler/qshambler_idle02.md5anim" );
-		animModel.mesh->loadMD5Anim( "qshambler/qshambler_walk.md5anim" );
-		animModel.mesh->loadMD5Anim( "qshambler/qshambler_attack01.md5anim" );
-		animModel.mesh->loadMD5Anim( "qshambler/qshambler_attack02.md5anim" );
+#if 0
+		_animModel.mesh->loadMD5Mesh( "qshambler/qshambler.md5mesh" );
+		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_idle02.md5anim" );
+		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_walk.md5anim" );
+		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_attack01.md5anim" );
+		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_attack02.md5anim" );
 
 		Material *	mtr = 0;
 		
 		mtr = new Material();
 		mtr->addTexture( "textures/grass.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( 0u, mtr );
-		animModel.mesh->setMaterial( 1u, mtr );
+		_animModel.mesh->setMaterial( 0u, mtr );
+		_animModel.mesh->setMaterial( 1u, mtr );
 #endif
 
-#if 0
-		animModel.mesh->loadMD5Mesh( "Boblamp/boblampclean.md5mesh" );
-		animModel.mesh->loadMD5Anim( "Boblamp/boblampclean.md5anim" );
+#if 1
+		_animModel.mesh->loadMD5Mesh( "Boblamp/boblampclean.md5mesh" );
+		_animModel.mesh->loadMD5Anim( "Boblamp/boblampclean.md5anim" );
 
 		Material *	mtr = 0;
 		
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/guard1_body.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( "guard1_body", mtr );
+		_animModel.mesh->setMaterial( "guard1_body", mtr );
 		
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/guard1_face.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( "guard1_face", mtr );
+		_animModel.mesh->setMaterial( "guard1_face", mtr );
 
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/guard1_helmet.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( "guard1_helmet", mtr );
+		_animModel.mesh->setMaterial( "guard1_helmet", mtr );
 
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/iron_grill.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( "iron_grill", mtr );
+		_animModel.mesh->setMaterial( "iron_grill", mtr );
 
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/round_grill.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( "round_grill", mtr );
+		_animModel.mesh->setMaterial( "round_grill", mtr );
 		
 		mtr = new Material();
 		mtr->addTexture( "Boblamp/guard1_body.dds", "unDiffuseMap", 0, GL_TEXTURE_2D, Sampler() );
-		animModel.mesh->setMaterial( 5, mtr );
+		_animModel.mesh->setMaterial( 5, mtr );
 #endif
 
-		animModel.mesh->setCallback( &onTrackEnd );
-		animModel.mesh->activeTrack( 1 );
+		_animModel.mesh->setCallback( &onTrackEnd );
+		_animModel.mesh->activeTrack( 1 );
 
 
-		if ( currPart != 3 ) {
-			animModel.pos = glm::vec3( 0.f, 0.f, 0.f );
+		if ( currPart != 2 ) {
+			_animModel.pos = glm::vec3( 0.f, 0.f, 0.f );
 
 			program->getStates() = Program::States();
 			cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y), 1.f, 3000.0f );
@@ -539,26 +484,44 @@ public:
 
 	void unload()
 	{
-		animModel = Model();
+		_animModel = Model();
+		delete _shaders[0];		_shaders[0] = NULL;
+		delete _shaders[1];		_shaders[1] = NULL;
 	}
 
 	void draw(int i)
 	{
-		if ( input.isKeyClick('u') )	animModel.paused = !animModel.paused;
+		// u
+		if ( input.isKeyClick('u') )	_animModel.paused = !_animModel.paused;
 
-		if ( !animModel.paused )
-			animModel.mesh->update( sys.getTimeDelta() * 0.0005f );
+		// v b
+		if ( input.isKeyClick('b') )	_fPositionBlend += 0.05f;
+		if ( input.isKeyClick('v') )	_fPositionBlend -= 0.05f;
+		_fPositionBlend = glm::clamp( _fPositionBlend, 0.f, 1.f );
 
-		program->getStates().mvp = cam.buildMVPMatrix( animModel.pos );	// TODO: rotation, scale
+		if ( !_animModel.paused )
+			_animModel.mesh->update( sys.getTimeDelta() * 0.0005f );	// x2 slow
 
-		program->bind( animModel.shader );
+		program->getStates().mvp = cam.buildMVPMatrix( _animModel.pos );	// TODO: rotation, scale
+
+		Shader *	shader = _shaders[ i % count_of(_shaders) ];
+
+		program->bind( shader );
+		shader->setUniformFloat( "unPositionBlend", _fPositionBlend );
 	
 		glEnable( GL_CULL_FACE );
 		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
 
-		animModel.mesh->draw( animModel.shader, true );
+		_animModel.mesh->draw( shader, true );
 		
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
+	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		static const char	partInfo[] = "";
+		
+		info += partInfo;
 	}
 };
