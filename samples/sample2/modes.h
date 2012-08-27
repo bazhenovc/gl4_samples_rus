@@ -132,6 +132,7 @@ public:
 	virtual void load() = 0;
 	virtual void unload() = 0;
 	virtual void draw(int) = 0;
+	//virtual void getModeInfo(int, std::string &) = 0;	// TODO: return information of mode (keys, ...)
 };
 
 
@@ -209,6 +210,21 @@ public:
 		_grids[ i&1 ]->draw();
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		if ( i >= counf_of(_shaders) )
+			return;
+	
+		static const char *	spacing[] = { "equal", "fractional_even", "fractional_odd" };
+		static const char	partInfo[] = "";
+		
+		infor += partInfo;
+		info += "\nPatch: ";
+		info += i&1 ? "quad" : "triangle";
+		info += "\nSpacing: ";
+		info += spacing[i>>1];
+	}
 };
 
 
@@ -216,17 +232,21 @@ class Part2 : public Mode
 {
 private:
 	Shader	*	_pnTriangles,
+			*	_pnTriangles2,
+			*	_phong3Patches,
 			*	_bezier16Patches;
 	Texture *	_diffuseMap,
 			*	_heightMap,
 			*	_normalMap;
 	Mesh	*	_grid3,
 			*	_grid16;
+	float		_fPositionBlend;
 
 public:
 	Part2(): _pnTriangles(NULL), _bezier16Patches(NULL),
+			_pnTriangles2(NULL), _phong3Patches(NULL),
 			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL),
-			_grid3(NULL), _grid16(NULL)
+			_grid3(NULL), _grid16(NULL), _fPositionBlend(1.0)
 	{}
 
 	~Part2()
@@ -236,8 +256,10 @@ public:
 
 	void load()
 	{
-		program->load( _pnTriangles,     "shaders/tess_pn-triangles.prg" );
-		program->load( _bezier16Patches, "shaders/tess_bezier16.prg" );
+		program->load( _pnTriangles,     "shaders/tess_pn-triangles_blend.prg" );
+		program->Load( _pnTriangles2,	 "shaders/tess_pn-triangles2_blend.prg" );
+		program->load( _phong3Patches,	 "shaders/tess_phong_blend.prg" );
+		program->load( _bezier16Patches, "shaders/tess_bezier16_blend.prg" );
 
 		_grid3	= new Mesh();
 		_grid16	= new Mesh();
@@ -281,7 +303,9 @@ public:
 
 	void unload()
 	{
+		delete _phong3Patches;		_phong3Patches = NULL;
 		delete _pnTriangles;		_pnTriangles = NULL;
+		delete _pnTriangles2;		_pnTriangles2 = NULL;
 		delete _bezier16Patches;	_bezier16Patches = NULL;
 		delete _grid3;				_grid3 = NULL;
 		delete _grid16;				_grid16 = NULL;
@@ -292,10 +316,24 @@ public:
 
 	void draw(int i)
 	{
-		Mesh	*	grid	= (i&1) ? _grid16 : _grid3;
-		Shader	*	shader	= (i&1) ? _bezier16Patches : _pnTriangles;
+		if ( input.isKeyClick('b') )	_fPositionBlend += 0.001f;
+		if ( input.isKeyClick('v') )	_fPositionBlend -= 0.001f;
+		_fPositionBlend = glm::clamp( _fPositionBlend, 0.f, 1.f );
+	
+		Mesh	*	grid	= i == 0 ? _grid16 : _grid3;
+		Shader	*	shader	= NULL;
+		
+		switch ( i )
+		{
+			case 0 :	shader = _bezier16Patches;	break;
+			case 1 :	shader = _pnTriangles;		break;
+			case 2 :	shader = _pnTriangles2;		break;
+			case 3 :	shader = _phong3Patches;	break;
+		};
 
 		program->bind( shader );
+		
+		shader->setUniformFloat( "unPositionBlend", _fPositionBlend );
 
 		_diffuseMap->bind( TEX_DIFFUSE );
 		_heightMap->bind(  TEX_HEIGHT );
@@ -306,6 +344,19 @@ public:
 		grid->draw();
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
+	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		if ( i > 3 )
+			return;
+	
+		static const char *	shaderInfo[] = { "Bezier patches", "PN-Triangles", "PN-Triangles v2", "Phong patches" };
+		static const char	partInfo[] = "";
+		
+		info += partInfo;
+		info += "\nCurrent mode: ";
+		info += shaderInfo[i];
 	}
 };
 
@@ -534,7 +585,7 @@ public:
 		if ( input.isKeyClick('u') )	animModel.paused = !animModel.paused;
 
 		if ( !animModel.paused )
-			animModel.mesh->update( sys.getTimeDelta() * 0.0005f );
+			animModel.mesh->update( sys.getTimeDelta() * 0.0005f );	// x2 slow
 
 		program->getStates().mvp = cam.buildMVPMatrix( animModel.pos );	// TODO: rotation, scale
 
@@ -547,5 +598,12 @@ public:
 		
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
+	}
+	
+	void getModeInfo(int i, std::string &info)
+	{
+		static const char	partInfo[] = "";
+		
+		info += partInfo;
 	}
 };
