@@ -33,16 +33,14 @@ void init()
 
 	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y), 1.f, 3000.0f );
 
-	currentMode		= allModes[2];
+	currentMode		= allModes[0];
 	currentView		= new View();
 
 	currentView->init();
 	currentMode->load();
-	currPart		= 2;
+	currPart		= 0;
 
 	primitivesQuery	= new Query();
-	primitivesQuery->begin( GL_PRIMITIVES_GENERATED );
-	primitivesQuery->end();
 
 	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
@@ -89,10 +87,6 @@ void display()
 	// < >
 	if ( input.isKeyClick(',') )	program->getStates().detailLevel--;
 	if ( input.isKeyClick('.') )	program->getStates().detailLevel++;
-
-	// [ ]
-	if ( input.isKeyClick('[') )	program->getStates().heightScale++;
-	if ( input.isKeyClick(']') )	program->getStates().heightScale--;
 
 	// ( )
 	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
@@ -164,7 +158,7 @@ void timerFunc()
 		updateQuery = true;
 	}
 
-	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i", currPart+1, sys.getFPS(), vertices );
+	sprintf( buf, "Sample1, part%i, mode:%i  Fps:%i, vertices: %i", currPart+1, modeIndex+1, sys.getFPS(), vertices );
 	glutSetWindowTitle( buf );
 }
 
@@ -172,7 +166,7 @@ void timerFunc()
 int main(int argc, char** argv)
 {
 	sys.setOnTimer( timerFunc );
-	sys.initGLUT( argc, argv, display, init, "Sample2, part1", 1024, 768 );
+	sys.initGLUT( argc, argv, display, init, "Sample2, part1", 800, 600 );//1024, 768 );
 	shutdown();
 	return 0;
 }

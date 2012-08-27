@@ -9,10 +9,10 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float		unGridScale		= 100.0;
-uniform float		unMaxTessLevel	= 32.0;
-uniform float		unHeightScale	= 10.0;
-uniform float		unDetailLevel	= 1000.0;
+uniform float		unGridScale;
+uniform float		unMaxTessLevel;
+uniform float		unHeightScale;
+uniform float		unDetailLevel;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
@@ -40,12 +40,12 @@ float Level(float dist)
 void main()
 {
 	Output.vTexcoord0	= inPosition * 100.0;
-	vec2	texc		= inPosition;
+	ivec2	texc		= ivec2( inPosition * vec2(textureSize( unHeightMap, 0 ).xy) - 0.5 );
 	gl_Position			= vec4( inPosition * unGridScale,
-						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
+						  texelFetch( unHeightMap, texc, 0 ).r * unHeightScale, 1.0 ).xzyw;
 	vec4	pos			= unMVPMatrix * gl_Position;
 	Output.fLevel		= Level( pos.z );
-	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
+	Output.vNormal		= normalize( texelFetch( unNormalMap, texc, 0 ).rbg * 2.0 - 1.0 );
 	Output.vScrCoords	= pos.xy / pos.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
@@ -60,8 +60,8 @@ void main()
 
 layout(vertices = 3) out;
 
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unDetailLevel	= 1000.0;
+uniform float	unMaxTessLevel;
+uniform float	unDetailLevel;
 
 in	TVertData {
 	vec3	vNormal;
@@ -129,7 +129,7 @@ void main()
 		gl_TessLevelOuter[1] = Level( Input[0], Input[1] ) * k;
 		gl_TessLevelInner[0] = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1] ),
 									gl_TessLevelOuter[2] ) * k;
-									
+
 		vec3	b300 = gl_in[0].gl_Position.xyz;
 		vec3	b030 = gl_in[1].gl_Position.xyz;
 		vec3	b003 = gl_in[2].gl_Position.xyz;
@@ -165,7 +165,7 @@ layout(triangles, equal_spacing, ccw) in;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
-uniform float		unHeightScale	= 10.0;
+uniform float		unHeightScale;
 
 in TContData {
 	vec3	vNormal;

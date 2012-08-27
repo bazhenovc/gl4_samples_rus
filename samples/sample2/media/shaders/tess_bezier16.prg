@@ -9,10 +9,10 @@
 
 layout(location = 0)	in vec2 inPosition;		// [0,+1]
 
-uniform float		unGridScale		= 100.0;
-uniform float		unMaxTessLevel	= 32.0;
-uniform float		unHeightScale	= 10.0;
-uniform float		unDetailLevel	= 1000.0;
+uniform float		unGridScale;
+uniform float		unMaxTessLevel;
+uniform float		unHeightScale;
+uniform float		unDetailLevel;
 uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
@@ -34,17 +34,17 @@ bool InScreen(in vec2 pos)
 
 float Level(float dist)
 {
-	return clamp( unDetailLevel*unGridScale*0.1/dist - 2.0, 0.1, unMaxTessLevel );
+	return clamp( unDetailLevel*unGridScale*0.4/dist - 2.0, 1.0, unMaxTessLevel+3.0 );
 }
 
 void main()
 {
 	Output.vTexcoord0	= inPosition * 100.0;
-	vec2	texc		= inPosition;
+	ivec2	texc		= ivec2( inPosition * vec2(textureSize( unHeightMap, 0 ).xy) - 0.5 );
 	gl_Position			= unMVPMatrix * vec4( inPosition * unGridScale,
-						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
+						  texelFetch( unHeightMap, texc, 0 ).r * unHeightScale, 1.0 ).xzyw;
 	Output.fLevel		= Level( gl_Position.z );
-	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
+	Output.vNormal		= normalize( texelFetch( unNormalMap, texc, 0 ).rbg * 2.0 - 1.0 );
 	Output.vScrCoords	= gl_Position.xy / gl_Position.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
@@ -59,8 +59,8 @@ void main()
 
 layout(vertices = 16) out;
 
-uniform float	unMaxTessLevel	= 32.0;
-uniform float	unDetailLevel	= 1000.0;
+uniform float	unMaxTessLevel;
+uniform float	unDetailLevel;
 
 in	TVertData {
 	vec3	vNormal;
@@ -81,7 +81,6 @@ out TContData {
 
 #define Level( _a, _b, _c, _d ) \
 	max( max( _a.fLevel, _d.fLevel ), ScreenSpaceLevel( _a.vScrCoords, _d.vScrCoords ) )
-//	max( _a.fLevel, _b.fLevel )
 
 vec4 Rect(in vec2 p0, in vec2 p1, in vec2 p2, in vec2 p3)
 {
@@ -106,7 +105,7 @@ bool QuadInScreen()
 
 float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
 {
-	return clamp( distance( p0, p1 ) * unDetailLevel * 4.0, 0.1, unMaxTessLevel );
+	return clamp( distance( p0, p1 ) * unDetailLevel * 8.0, 1.0, unMaxTessLevel+3.0 );
 }
 
 void main()
@@ -169,7 +168,7 @@ void main()
 								gl_TessCoord.x * gl_TessCoord.x * gl_TessCoord.x );
 	vec4		v = vec4 ( 1.0, gl_TessCoord.y, gl_TessCoord.y * gl_TessCoord.y,
 								gl_TessCoord.y * gl_TessCoord.y * gl_TessCoord.y );
-	const float	p = 3.0;	// can change to control smoothing
+	const float	p = 3.0;
 	const mat4	b = mat4 (	 1.0,  0,      0.0, 0.0,
 							-p,    p,      0.0, 0.0,
 							 p,   -p*2.0,  p,   0.0,
@@ -207,7 +206,7 @@ void main()
 	outColor.rgb	= texture( unDiffuseMap, Input.vTexcoord0 ).rgb;
 	outColor.a		= 0.0;	// empty
 	outNormal.rgb	= Input.vNormal * 0.5 + 0.5;
-	outNormal.a		= 1.0 - Input.fLevel / unMaxTessLevel;
+	outNormal.a		= 1.0 - Input.fLevel / (unMaxTessLevel*3.0);
 }
 
 --eof

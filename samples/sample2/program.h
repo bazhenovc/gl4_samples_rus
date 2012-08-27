@@ -18,13 +18,10 @@ public:
 	struct States
 	{
 		glm::mat4	mvp;
-		glm::mat3	norm;
-		float		gridScale;
-		float		maxTessLevel;
-		float		heightScale;
 		float		detailLevel;
+		float		maxTessLevel;
 
-		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-800.f), detailLevel(20.f) {}
+		States(): maxTessLevel(12.f), detailLevel(20.f) {}
 	};
 
 private:
@@ -52,7 +49,6 @@ void Program::setConstUniforms(Shader *shader) const
 	shader->setTexture( "unHeightMap",		TEX_HEIGHT );
 	shader->setTexture( "unNormalMap",		TEX_NORMAL );
 	shader->setTexture( "unDepthMap",		TEX_DEPTH );
-	shader->setTexture( "unTessLevelMap",	TEX_TESS_LEVEL );
 }
 
 void Program::setUniforms(Shader *shader)
@@ -60,10 +56,7 @@ void Program::setUniforms(Shader *shader)
 	if ( _states.maxTessLevel < 1.f )	_states.maxTessLevel = 1.f;
 
 	shader->setUniformMatrix( "unMVPMatrix",		 _states.mvp );
-	shader->setUniformMatrix( "unNormalMatrix",	 _states.norm );
-	shader->setUniformFloat( "unGridScale",		 _states.gridScale );
 	shader->setUniformFloat( "unMaxTessLevel",	 _states.maxTessLevel );
-	shader->setUniformFloat( "unHeightScale",	-_states.heightScale );
 	shader->setUniformFloat( "unDetailLevel",	 _states.detailLevel );
 }
 

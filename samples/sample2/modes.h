@@ -140,16 +140,13 @@ class Part1 : public Mode
 private:
 	Shader *	_shaders[6];
 	Mesh *		_grids[2];
-	int			_lastIdx,
-				_lastTime;
-	float		_partTime;
+	float		_gridScale;
 
 public:
-	Part1(): _lastIdx(0), _partTime(0.f), _lastTime(0)
+	Part1(): _gridScale(100.f)
 	{
 		memset( _shaders, 0, sizeof(_shaders) );
-		_grids[0] = NULL;
-		_grids[1] = NULL;
+		memset( _grids,   0, sizeof(_grids) );
 	}
 
 	~Part1()
@@ -176,13 +173,13 @@ public:
 		_grids[1]->createGrid( gridSize, 1.f / float(gridSize), 4 );
 
 		if ( currPart != 0 ) {
+			_gridScale = 100.f;
 			program->getStates() = Program::States();
-			program->getStates().gridScale = 100.f;
 			program->getStates().maxTessLevel = 6.f;
-			cam.init( 60.0f, float(sys.getWndSize().y) / float(sys.getWndSize().x), 1.f, 3000.0f,
-						glm::vec3(	-program->getStates().gridScale * 0.5f,
-									-program->getStates().gridScale * 0.9f,
-									-program->getStates().gridScale * 1.5f ) );
+			cam.init( 60.0f, float(sys.getWndSize().y) / float(sys.getWndSize().x), 1.f, 500.0f,
+						glm::vec3(	-_gridScale * 0.5f,
+									-_gridScale * 0.9f,
+									-_gridScale * 1.5f ) );
 		}
 	}
 
@@ -200,10 +197,13 @@ public:
 
 	void draw(int i)
 	{
+		Shader *	shader = _shaders[ i%6 ];
+
 		const glm::vec4		clearColor(0.f);
 		glClearBufferfv( GL_COLOR, 0, glm::value_ptr(clearColor) );
 
-		program->bind( _shaders[ i%6 ] );
+		program->bind( shader );
+		shader->setUniformFloat( "unGridScale", _gridScale );
 
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		_grids[ i&1 ]->draw();
@@ -222,11 +222,13 @@ private:
 			*	_normalMap;
 	Mesh	*	_grid3,
 			*	_grid16;
+	float		_gridScale;
+	float		_heightScale;
 
 public:
 	Part2(): _pnTriangles(NULL), _bezier16Patches(NULL),
 			_diffuseMap(NULL), _heightMap(NULL), _normalMap(NULL),
-			_grid3(NULL), _grid16(NULL)
+			_grid3(NULL), _grid16(NULL), _gridScale(2000.f), _heightScale(800.f)
 	{}
 
 	~Part2()
@@ -242,18 +244,18 @@ public:
 		_grid3	= new Mesh();
 		_grid16	= new Mesh();
 		
-		const int	gridSize = 127;
+		const int	gridSize = 255;
 
 		_grid3->createGrid(  gridSize, 1.f / float(gridSize),  3 );
 		_grid16->createGrid( gridSize, 1.f / float(gridSize), 16 );
-		
+
 		_diffuseMap		= new Texture( GL_TEXTURE_2D );
 		_heightMap		= new Texture( GL_TEXTURE_2D );
 		_normalMap		= new Texture( GL_TEXTURE_2D );
 
 		_diffuseMap->loadDDS( "textures/grass.dds" );
-		_heightMap->loadDDS(  "textures/height.dds" );
-		_normalMap->loadDDS(  "textures/normal.dds" );
+		_heightMap->loadDDS(  "textures/height_256.dds" );
+		_normalMap->loadDDS(  "textures/normal_256.dds" );
 
 		_diffuseMap->bind();
 		_diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
@@ -267,14 +269,18 @@ public:
 		_normalMap->bind();
 		_normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 		_normalMap->unbind();
+		
 
 		if ( currPart != 1 ) {
+			_gridScale	 = 2000.f;
+			_heightScale = _gridScale * 0.125f;
+
 			program->getStates() = Program::States();
 			cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
-					  1.f, 3000.0f,
-					  glm::vec3(	-program->getStates().gridScale * 0.5f,
-									 program->getStates().heightScale * 0.1f,
-									-program->getStates().gridScale * 0.5f )
+					  1.f, 2000.0f,
+					  glm::vec3(	-_gridScale * 0.5f,
+									-_heightScale * 0.3f,
+									-_gridScale * 0.5f )
 					 );
 		}
 	}
@@ -292,10 +298,17 @@ public:
 
 	void draw(int i)
 	{
+		// [ ]
+		if ( input.isKeyClick('[') )	_heightScale--;
+		if ( input.isKeyClick(']') )	_heightScale++;
+
+
 		Mesh	*	grid	= (i&1) ? _grid16 : _grid3;
 		Shader	*	shader	= (i&1) ? _bezier16Patches : _pnTriangles;
 
 		program->bind( shader );
+		shader->setUniformFloat(  "unGridScale",		 _gridScale );
+		shader->setUniformFloat(  "unHeightScale",	 _heightScale );
 
 		_diffuseMap->bind( TEX_DIFFUSE );
 		_heightMap->bind(  TEX_HEIGHT );
