@@ -63,6 +63,20 @@ layout(vertices = 3) out;
 uniform float	unMaxTessLevel;
 uniform float	unDetailLevel;
 
+struct PnPatch
+{
+	float b210;
+	float b120;
+	float b021;
+	float b012;
+	float b102;
+	float b201;
+	float b111;
+	float n110;
+	float n011;
+	float n101;
+};
+
 in	TVertData {
 	vec3	vNormal;
 	vec2	vScrCoords;
@@ -74,15 +88,8 @@ in	TVertData {
 out TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
+	PnPatch	sPatch;
 } Output[];
-
-patch out	vec3	vB210;
-patch out	vec3	vB120;
-patch out	vec3	vB021;
-patch out	vec3	vB012;
-patch out	vec3	vB102;
-patch out	vec3	vB201;
-patch out	vec3	vB111;
 
 
 #define Min3( _a, _b, _c )	min( min( _a, _b ), _c )
@@ -117,6 +124,20 @@ float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
 	return clamp( distance( p0, p1 ) * unDetailLevel * 4.0, 0.1, unMaxTessLevel );
 }
 
+float wij(int i, int j)
+{
+	return dot( gl_in[j].gl_Position.xyz - gl_in[i].gl_Position.xyz, Input[i].vNormal );
+}
+
+float vij(int i, int j)
+{
+	vec3 Pj_minus_Pi = gl_in[j].gl_Position.xyz
+	                 - gl_in[i].gl_Position.xyz;
+	vec3 Ni_plus_Nj  = Input[i].vNormal + Input[j].vNormal;
+	return 2.0 * dot( Pj_minus_Pi, Ni_plus_Nj ) /
+				 dot( Pj_minus_Pi, Pj_minus_Pi );
+}
+
 void main()
 {
 	if ( I == 0 )
@@ -129,25 +150,32 @@ void main()
 		gl_TessLevelOuter[1] = Level( Input[0], Input[1] ) * k;
 		gl_TessLevelInner[0] = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1] ),
 									gl_TessLevelOuter[2] ) * k;
-									
-		vec3	b300 = gl_in[0].gl_Position.xyz;
-		vec3	b030 = gl_in[1].gl_Position.xyz;
-		vec3	b003 = gl_in[2].gl_Position.xyz;
-		vec3	n200 = Input[0].vNormal;
-		vec3	n020 = Input[1].vNormal;
-		vec3	n002 = Input[2].vNormal;
-		
-		vB210	= ( 2.0*b300 + b030 - dot( b030-b300, n200 )*n200 )/3.0;
-		vB120	= ( 2.0*b030 + b300 - dot( b300-b030, n020 )*n020 )/3.0;
-		vB021	= ( 2.0*b030 + b003 - dot( b003-b030, n020 )*n020 )/3.0;
-		vB012	= ( 2.0*b003 + b030 - dot( b030-b003, n002 )*n002 )/3.0;
-		vB102	= ( 2.0*b003 + b300 - dot( b300-b003, n002 )*n002 )/3.0;
-		vB201	= ( 2.0*b300 + b003 - dot( b003-b300, n200 )*n200 )/3.0;
-	
-		vec3	ee	= ( vB210 + vB120 + vB021 + vB012 + vB102 + vB201 )/6.0;
-		vec3	vv	= ( b300 + b030 + b003 )/3.0;
-		vB111		= ee + (ee - vv)/2.0;
 	}
+	
+	float P0 = gl_in[0].gl_Position[I];
+	float P1 = gl_in[1].gl_Position[I];
+	float P2 = gl_in[2].gl_Position[I];
+	float N0 = Input[0].vNormal[I];
+	float N1 = Input[1].vNormal[I];
+	float N2 = Input[2].vNormal[I];
+
+	Output[I].sPatch.b210 = (2.0*P0 + P1 - wij(0,1)*N0)/3.0;
+	Output[I].sPatch.b120 = (2.0*P1 + P0 - wij(1,0)*N1)/3.0;
+	Output[I].sPatch.b021 = (2.0*P1 + P2 - wij(1,2)*N1)/3.0;
+	Output[I].sPatch.b012 = (2.0*P2 + P1 - wij(2,1)*N2)/3.0;
+	Output[I].sPatch.b102 = (2.0*P2 + P0 - wij(2,0)*N2)/3.0;
+	Output[I].sPatch.b201 = (2.0*P0 + P2 - wij(0,2)*N0)/3.0;
+	float E = ( Output[I].sPatch.b210 +
+	            Output[I].sPatch.b120 +
+	            Output[I].sPatch.b021 +
+	            Output[I].sPatch.b012 +
+	            Output[I].sPatch.b102 +
+	            Output[I].sPatch.b201 ) / 6.0;
+	float V = (P0 + P1 + P2)/3.0;
+	Output[I].sPatch.b111 = E + (E - V)*0.5;
+	Output[I].sPatch.n110 = N0+N1-vij(0,1)*(P1-P0);
+	Output[I].sPatch.n011 = N1+N2-vij(1,2)*(P2-P1);
+	Output[I].sPatch.n101 = N2+N0-vij(2,0)*(P0-P2);
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
 	Output[I].vNormal		= Input[I].vNormal;
@@ -166,11 +194,26 @@ uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
 uniform float		unHeightScale;
+uniform float		unPositionBlend;
+
+struct PnPatch
+{
+	float b210;
+	float b120;
+	float b021;
+	float b012;
+	float b102;
+	float b201;
+	float b111;
+	float n110;
+	float n011;
+	float n101;
+};
 
 in TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
-	float	fLevel;
+	PnPatch	sPatch;
 } Input[];
 
 out	TEvalData {
@@ -179,41 +222,71 @@ out	TEvalData {
 	float	fLevel;
 } Output;
 
-patch in	vec3	vB210;
-patch in	vec3	vB120;
-patch in	vec3	vB021;
-patch in	vec3	vB012;
-patch in	vec3	vB102;
-patch in	vec3	vB201;
-patch in	vec3	vB111;
-
 
 #define Interpolate( _a, _p ) \
 	(	gl_TessCoord.z * _a[0] _p + \
 		gl_TessCoord.x * _a[1] _p + \
 		gl_TessCoord.y * _a[2] _p )
+		
+#define PATCH( _a, _b, _c ) \
+	Input[0].sPatch._a, Input[1].sPatch._b, Input[2].sPatch._c
 	
 void main()
 {
-	vec3	u		= gl_TessCoord;
-	vec3	v		= u * u;
-	vec3	w		= v * 3.0;
-	vec3	pos		=	gl_in[0].gl_Position.xyz * v.z * u.z +
-						gl_in[1].gl_Position.xyz * v.x * u.x +
-						gl_in[2].gl_Position.xyz * v.y * u.y +
-						vB210 * w.z * u.x +
-						vB120 * u.z * w.x +
-						vB201 * w.z * u.y +
-						vB021 * w.x * u.y +
-						vB102 * u.z * w.y +
-						vB012 * u.x * w.y +
-						vB111 * 6.0 * u.x * u.y * u.z;
-	Output.vNormal		= normalize( Interpolate( Input, .vNormal ) );
+	float	b300	= gl_in[0].gl_Position.xyz;
+	float	b030	= gl_in[1].gl_Position.xyz;
+	float	b003	= gl_in[2].gl_Position.xyz;
+	float	n200	= Input[0].vNormal;
+	float	n020	= Input[1].vNormal;
+	float	n002    = Input[2].vNormal;
+	vec3	uvw		= gl_TessCoord;
+
+	vec3 uvwSquared	= uvw*uvw;
+	vec3 uvwCubed	= uvwSquared*uvw;
+
+	vec3 b210 = vec3( PATCH( b210, b210, b210 ) );
+	vec3 b120 = vec3( PATCH( b120, b120, b120 ) );
+	vec3 b021 = vec3( PATCH( b021, b021, b021 ) );
+	vec3 b012 = vec3( PATCH( b012, b012, b012 ) );
+	vec3 b102 = vec3( PATCH( b102, b102, b102 ) );
+	vec3 b201 = vec3( PATCH( b201, b201, b201 ) );
+	vec3 b111 = vec3( PATCH( b111, b111, b111 ) );
+
+	vec3 n110 = normalize( vec3( PATCH( n110, n110, n110 ) ) );
+	vec3 n011 = normalize( vec3( PATCH( n011, n011, n011 ) ) );
+	vec3 n101 = normalize( vec3( PATCH( n101, n101, n101 ) ) );
+
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
+
+	vec3	ln_norm		= normalize( Interpolate( Input, .vNormal ) );
+	vec3	pn_norm		= n200 * uvwSquared[2] +
+						  n020 * uvwSquared[0] +
+						  n002 * uvwSquared[1] +
+						  n110 * uvw[2] * uvw[0] +
+						  n011 * uvw[0] * uvw[1] +
+						  n101 * uvw[2] * uvw[1];
+	Output.vNormal		= (1.0-unPositionBlend) * ln_norm +
+						  unPositionBlend * pn_norm;
+
+	uvwSquared *= 3.0;
+	vec3	ln_pos		= Interpolate( gl_in, .gl_Position.xyz );
+	vec3	pn_pos		= b300 * uvwCubed[2] +
+						  b030 * uvwCubed[0] +
+						  b003 * uvwCubed[1] +
+						  b210 * uvwSquared[2] * uvw[0] +
+						  b120 * uvwSquared[0] * uvw[2] +
+						  b201 * uvwSquared[2] * uvw[1] +
+						  b021 * uvwSquared[0] * uvw[1] +
+						  b102 * uvwSquared[1] * uvw[2] +
+						  b012 * uvwSquared[1] * uvw[0] +
+						  b111 * 6.0 * uvw[0] * uvw[1] * uvw[2];
+
 	Output.fLevel		= gl_TessLevelOuter[2] * gl_TessCoord.x +
 						  gl_TessLevelOuter[0] * gl_TessCoord.y +
 						  gl_TessLevelOuter[1] * gl_TessCoord.z;
-	gl_Position			= unMVPMatrix * vec4( pos, 1.0 );
+	
+	vec3	blend_pos	= (1.0-unPositionBlend) * ln_pos + unPositionBlend * pn_pos;
+	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
 }
 
 

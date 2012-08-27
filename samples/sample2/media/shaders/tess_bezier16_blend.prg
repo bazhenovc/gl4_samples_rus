@@ -41,11 +41,12 @@ void main()
 {
 	Output.vTexcoord0	= inPosition * 100.0;
 	vec2	texc		= inPosition;
-	gl_Position			= unMVPMatrix * vec4( inPosition * unGridScale,
+	gl_Position			= vec4( inPosition * unGridScale,
 						  texture( unHeightMap, texc ).r * unHeightScale, 1.0 ).xzyw;
-	Output.fLevel		= Level( gl_Position.z );
+	vec4	pos			= unMVPMatrix * gl_Position;
+	Output.fLevel		= Level( pos.z );
 	Output.vNormal		= normalize( texture( unNormalMap, texc ).rbg * 2.0 - 1.0 );
-	Output.vScrCoords	= gl_Position.xy / gl_Position.w;
+	Output.vScrCoords	= pos.xy / pos.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
 
@@ -140,6 +141,8 @@ void main()
 
 layout(quads, equal_spacing, ccw) in;
 
+uniform mat4	unMVPMatrix;
+
 in TContData {
 	vec3	vNormal;
 	vec2	vTexcoord0;
@@ -159,8 +162,8 @@ out	TEvalData {
 	  _bu.w * (_bv.x * (_a[3] _p) + _bv.y * (_a[7] _p) + _bv.z * (_a[11] _p) + _bv.w * (_a[15] _p)) )
 	
 #define InterpolateQuad( _a, _p ) \
-	( mix(	mix( _a[0] _p, _a[1] _p, gl_TessCoord.x ), \
-			mix( _a[3] _p, _a[2] _p, gl_TessCoord.x ), \
+	( mix(	mix( (_a[0] _p), (_a[1] _p), gl_TessCoord.x ), \
+			mix( (_a[3] _p), (_a[2] _p), gl_TessCoord.x ), \
 			gl_TessCoord.y ) )
 			
 void main()
@@ -177,11 +180,16 @@ void main()
 	vec4		bu = b * u;
 	vec4		bv = b * v;
 
-	gl_Position			= Interpolate( gl_in, .gl_Position, bu, bv );
+	vec3	b_pos		= Interpolate( gl_in, .gl_Position.xyz, bu, bv );
+	vec3	l_pos		= InterpolateQuad( gl_in, .gl_Position.xyz );
+	
 	Output.vNormal		= Interpolate( Input, .vNormal, bu, bv );
 	Output.vTexcoord0 	= Interpolate( Input, .vTexcoord0, bu, bv );
 	Output.fLevel		= mix( gl_TessLevelInner[0], InterpolateQuad( gl_TessLevelOuter, ),
 								distance( gl_TessCoord.xy, vec2(0.5) ) );
+	
+	vec3	blend_pos	= (1.0-unPositionBlend) * l_pos + unPositionBlend * b_pos;
+	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
 }
 
 

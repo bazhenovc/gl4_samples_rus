@@ -166,6 +166,7 @@ uniform mat4		unMVPMatrix;
 uniform sampler2D	unHeightMap;
 uniform sampler2D	unNormalMap;
 uniform float		unHeightScale;
+uniform float		unPositionBlend;
 
 in TContData {
 	vec3	vNormal;
@@ -198,7 +199,7 @@ void main()
 	vec3	u		= gl_TessCoord;
 	vec3	v		= u * u;
 	vec3	w		= v * 3.0;
-	vec3	pos		=	gl_in[0].gl_Position.xyz * v.z * u.z +
+	vec3	pn_pos	=	gl_in[0].gl_Position.xyz * v.z * u.z +
 						gl_in[1].gl_Position.xyz * v.x * u.x +
 						gl_in[2].gl_Position.xyz * v.y * u.y +
 						vB210 * w.z * u.x +
@@ -208,12 +209,14 @@ void main()
 						vB102 * u.z * w.y +
 						vB012 * u.x * w.y +
 						vB111 * 6.0 * u.x * u.y * u.z;
+	vec3	ln_pos	= Interpolate( gl_in, .gl_Position.xyz );
 	Output.vNormal		= normalize( Interpolate( Input, .vNormal ) );
 	Output.vTexcoord0	= Interpolate( Input, .vTexcoord0 );
 	Output.fLevel		= gl_TessLevelOuter[2] * gl_TessCoord.x +
 						  gl_TessLevelOuter[0] * gl_TessCoord.y +
 						  gl_TessLevelOuter[1] * gl_TessCoord.z;
-	gl_Position			= unMVPMatrix * vec4( pos, 1.0 );
+	vec3	blend_pos	= (1.0-unPositionBlend) * ln_pos + unPositionBlend * pn_pos;
+	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
 }
 
 
