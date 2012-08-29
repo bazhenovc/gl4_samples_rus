@@ -112,9 +112,9 @@ void main()
 		float	scr_x = max( Input[0].vScrCoords.x, max( Input[1].vScrCoords.x, Input[2].vScrCoords.x ) );
 		float	tesslevel = unMaxTessLevel;//(scr_x > 0.0 ? unMaxTessLevel : 1.0) * k;
 		
-		gl_TessLevelOuter[0] = k;
-		gl_TessLevelOuter[1] = k;
-		gl_TessLevelOuter[2] = k;
+		gl_TessLevelOuter[0] = tesslevel;
+		gl_TessLevelOuter[1] = tesslevel;
+		gl_TessLevelOuter[2] = tesslevel;
 		gl_TessLevelInner[0] = tesslevel;
 	}
 	
@@ -190,9 +190,13 @@ void main()
 					  tc1[1] * tc1[2] * termJK +
 					  tc1[2] * tc1[0] * termIK;
 					  
-	vec3	blend_pos	= (1.0-unPositionBlend) * ln_pos + unPositionBlend * ph_pos;
+	bool	is_edge		= (any( equal( gl_TessCoord, vec3(0.0) ) ) ||
+						   any( equal( gl_TessCoord, vec3(1.0) ) ));
+	float	blend		= is_edge ? 0.0 : unPositionBlend;
+	vec3	blend_pos	= (1.0-blend) * ln_pos + blend * ph_pos;
 	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
 
+	
 	Output.vNormal		= normalize( Interpolate( Input, .vNormal ) );
 	Output.vTexcoord	= Interpolate( Input, .vTexcoord );
 	Output.fLevel		= gl_TessLevelOuter[2] * gl_TessCoord.x +
