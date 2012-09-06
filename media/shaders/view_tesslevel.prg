@@ -40,10 +40,8 @@ uniform vec3	vColors[colors] = vec3[] (
 vec3 GetColor(float f)
 {
 	float	a = clamp( f * colors, 0.0, float(colors) );
-	int		i = int( clamp( a, 0.0, float(colors-1) ) );
-	
-	a -= float(i);
-	return mix( vColors[i], vColors[i+1], a );
+	int		i = int( clamp( a, 0.0, float(colors-2) ) );
+	return mix( vColors[i], vColors[i+1], fract(a) );
 }
 
 void main()

@@ -71,8 +71,8 @@ public:
 	void setWrap(GLenum s, GLenum t, GLenum r = GL_REPEAT);
 	void setAnisotropy(int level);
 
-	bool loadDDS(const char* filename);
-	bool loadImage(const char* filename);
+	bool loadDDS(const char* filename, bool genMipmaps = true);
+	bool loadImage(const char* filename, bool genMipmaps = true);
 
 	bool load2DLayerDDS(const char *filename, int layer);
 	bool load2DLayerImage(const char *filename, int layer);

@@ -10,7 +10,7 @@ class RenderBuffer
 {
 public:
 
-	RenderBuffer(GLuint type, unsigned int width, unsigned int height);
+	RenderBuffer();
 	~RenderBuffer();
 
 	inline GLuint getID() const
@@ -32,6 +32,8 @@ public:
 	{
 		return height;
 	}
+
+	void create(GLuint type, unsigned int width, unsigned int height, unsigned int samples = 0);
 
 private:
 

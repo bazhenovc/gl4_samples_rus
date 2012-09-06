@@ -3,10 +3,10 @@
 
 #include "libdds.h"
 #include "libdds_opengl.h"
-/*
+
 #include <IL/il.h>
 #include <IL/ilu.h>
-*/
+
 #include "stdio.h"
 #include "System.h"
 
@@ -91,20 +91,32 @@ void Texture::create2D(const void *data, unsigned int w, unsigned int h,
 
 	if ( !data )
 	{
-		//glTexStorage2D( type, levels+1, internalFormat, w, h );
-		for (unsigned int i = 0; i <= levels; ++i)
-		{
-			glTexImage2D( type, i, internalFormat, w, h, 0, format, byteType, NULL );
-			w = DDS_MAX( w>>1, 1 );
-			h = DDS_MAX( h>>1, 1 );
-		}
-		setFilter( levels > 0 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR, GL_LINEAR );
+		if ( glTexStorage2D )
+			glTexStorage2D( type, levels+1, internalFormat, w, h );
+		else
+			for (unsigned int i = 0; i <= levels; ++i)
+			{
+				glTexImage2D( type, i, internalFormat, w, h, 0, format, byteType, NULL );
+				w = DDS_MAX( w>>1, 1 );
+				h = DDS_MAX( h>>1, 1 );
+			}
+
+		if ( levels > 0 ) {
+			setFilter( GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR );
+			setAnisotropy( 16 );
+		} else
+			setFilter( GL_LINEAR, GL_LINEAR );
 	}
 	else
 	{
-		assert( levels > 0 && "levels parameter not supported" );
 		glTexImage2D(type, 0, internalFormat, w, h, 0, format, byteType, data);
-		setFilter( GL_LINEAR, GL_LINEAR );
+
+		if ( levels > 0 ) {
+			generateMipmaps();
+			setFilter( GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR );
+			setAnisotropy( 16 );
+		} else
+			setFilter( GL_LINEAR, GL_LINEAR );
 	}
 	setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 
@@ -134,21 +146,32 @@ void Texture::create3D(const void *data, unsigned int w, unsigned int h, unsigne
 	
 	if ( !data )
 	{
-		//glTexStorage3D( type, levels+1, internalFormat, w, h, d );
-		for (unsigned int i = 0; i <= levels; ++i)
-		{
-			glTexImage3D( type, i, internalFormat, w, h, d, 0, format, byteType, NULL );
-			w = DDS_MAX( w>>1, 1 );
-			h = DDS_MAX( h>>1, 1 );
-			if ( type == GL_TEXTURE_3D )	d = DDS_MAX( d>>1, 1 );
-		}
-		setFilter( levels > 0 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR, GL_LINEAR );
+		if ( glTexStorage3D )
+			glTexStorage3D( type, levels+1, internalFormat, w, h, d );
+		else
+			for (unsigned int i = 0; i <= levels; ++i)
+			{
+				glTexImage3D( type, i, internalFormat, w, h, d, 0, format, byteType, NULL );
+				w = DDS_MAX( w>>1, 1 );
+				h = DDS_MAX( h>>1, 1 );
+				if ( type == GL_TEXTURE_3D )	d = DDS_MAX( d>>1, 1 );
+			}
+
+		if ( levels > 0 ) {
+			setFilter( GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR );
+			setAnisotropy( 16 );
+		} else
+			setFilter( GL_LINEAR, GL_LINEAR );
 	}
 	else
 	{
-		assert( levels > 0 && "levels parameter not supported" );
 		glTexImage3D( type, 0, internalFormat, w, h, d, 0, format, byteType, data );
-		setFilter( GL_LINEAR, GL_LINEAR );
+
+		if ( levels > 0 ) {
+			generateMipmaps();
+			setFilter( GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR );
+		} else
+			setFilter( GL_LINEAR, GL_LINEAR );
 	}
 	setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
 
@@ -168,8 +191,6 @@ void Texture::createBuffer(HardwareBuffer *buf, GLenum internalFormat)
 {
 	if (!id) {
 		glGenTextures(1, &id);
-		//bind();
-		//unbind();
 	}
 	glTextureBufferEXT( id, type, internalFormat, buf->getID() );
 }
@@ -179,7 +200,7 @@ void Texture::generateMipmaps()
 	glGenerateMipmap( type );
 }
 
-bool Texture::loadDDS(const char *filename)
+bool Texture::loadDDS(const char *filename, bool genMipmaps)
 {
 	DDS_GL_TextureInfo texInfo;
 	System::clearGLErrors();
@@ -193,6 +214,12 @@ bool Texture::loadDDS(const char *filename)
 	id = texInfo.id;
 	width = texInfo.width;
 	height = texInfo.height;
+
+	if ( texInfo.num_mipmaps == 1 && genMipmaps ) {
+		bind();
+		generateMipmaps();
+		unbind();
+	}
 	return true;
 }
 
@@ -236,17 +263,17 @@ bool Texture::load2DLayerDDS(const char *filename, int layer)
 }
 
 void Texture::_initIL()
-{/*
+{
 	static bool ilinit = false;
 	if (!ilinit) {
 		ilinit = true;
 		ilInit();
 		iluInit();
-	}*/
+	}
 }
 
-bool Texture::loadImage(const char *filename)
-{/*
+bool Texture::loadImage(const char *filename, bool genMipmaps)
+{
 	_initIL();
 
 	ILuint ilid = 0;
@@ -262,19 +289,19 @@ bool Texture::loadImage(const char *filename)
 	}
 
 	create2D( ilGetData(), ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT),
-			  ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
+			  ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE),
+			  genMipmaps ? 1 : 0 );
 
 	ilDeleteImages(1, &id);
 
-	return true;*/
-	return false;
+	return true;
 }
 
 bool Texture::load2DLayerImage(const char *filename, int layer)
 {
 	if ( !id )
 		return false;
-	/*
+	
 	_initIL();
 
 	ILuint ilid = 0;
@@ -294,9 +321,7 @@ bool Texture::load2DLayerImage(const char *filename, int layer)
 				ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE) );
 
 	ilDeleteImages(1, &id);
-
-	return true;*/
-	return false;
+	return true;
 }
 
 }

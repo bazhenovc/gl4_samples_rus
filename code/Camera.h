@@ -58,6 +58,10 @@ public:
 		return _proj * _view * glm::translate( _position );
 	}
 
+	inline glm::mat4 toMatrixScale(float scale) const {
+		return _proj * _view * glm::translate( _position ) * glm::scale( scale, scale, scale );
+	}
+
 	inline glm::mat4 toMVMatrix() const {
 		return _view * glm::translate( _position );
 	}
@@ -66,12 +70,12 @@ public:
 		return _proj;
 	}
 
-	inline glm::mat4 buildMVPMatrix(const glm::vec3 &pos) const {
-		return _proj * _view * glm::translate( _position - pos );
+	inline glm::mat4 buildMVPMatrix(const glm::vec3 &pos, const glm::quat &rot = glm::quat(), float scale = 1.f) const {
+		return _proj * _view * glm::translate( _position - pos ) * glm::mat4_cast(rot) * glm::scale( scale, scale, scale );
 	}
 
-	inline glm::mat4 buildMVMatrix(const glm::vec3 &pos) const {
-		return _view * glm::translate( _position - pos );
+	inline glm::mat4 buildMVMatrix(const glm::vec3 &pos, const glm::quat &rot = glm::quat(), float scale = 1.f) const {
+		return _view * glm::translate( _position - pos ) * glm::mat4_cast(rot) * glm::scale( scale, scale, scale );
 	}
 
 	inline glm::vec3 const & position() const {

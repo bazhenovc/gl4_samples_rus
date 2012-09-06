@@ -64,16 +64,6 @@ void Framebuffer::setRenderTargets(unsigned int flag)
 #undef ADD_RT
 }
 
-Texture* Framebuffer::createTexture(GLuint type, unsigned int width, unsigned int height,
-									GLuint format,
-									GLuint internalFormat,
-									GLuint byteType)
-{
-	Texture* ret = new Texture(type);
-	ret->create2D(NULL, width, height, format, internalFormat, byteType);
-	return ret;
-}
-
 void Framebuffer::attach(Texture *texture, GLuint attachment)
 {
 	glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture->getID(), 0);
@@ -82,12 +72,6 @@ void Framebuffer::attach(Texture *texture, GLuint attachment)
 void Framebuffer::attachLayer(Texture *texture, GLenum attachment, GLint layer)
 {
 	glFramebufferTextureLayer( GL_FRAMEBUFFER, attachment, texture->getID(), 0, layer );
-}
-
-RenderBuffer* Framebuffer::createRenderBuffer(GLuint type, unsigned int width, unsigned int height)
-{
-	RenderBuffer* ret = new RenderBuffer(type, width, height);
-	return ret;
 }
 
 void Framebuffer::attach(RenderBuffer *buffer, GLuint attacment)

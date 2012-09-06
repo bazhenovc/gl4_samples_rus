@@ -30,9 +30,9 @@ bool InScreen(in vec2 pos)
 void main()
 {
 	Output.vTexcoord	= inTexcoord;
-	gl_Position			= vec4( inPosition, 1.0 ).yzxw;
+	gl_Position			= vec4( inPosition, 1.0 );
 	vec4	pos			= unMVPMatrix * gl_Position;
-	Output.vNormal		= inNormal.yzx * -1.0;
+	Output.vNormal		= inNormal;
 	Output.vScrCoords	= pos.xy / pos.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
 }
@@ -48,6 +48,7 @@ void main()
 layout(vertices = 3) out;
 
 uniform float	unMaxTessLevel;
+uniform float	unPositionBlend;
 
 struct PhongPatch
 {
@@ -100,7 +101,14 @@ bool TriangleInScreen()
 float PIi(int i, vec3 q)
 {
 	vec3 q_minus_p = q - gl_in[i].gl_Position.xyz;
-	return ( q[I] - dot( q_minus_p, Input[i].vNormal ) * Input[i].vNormal[I] );
+	return ( q[I] - dot( q_minus_p, Input[i].vNormal ) * Input[i].vNormal[I] * unPositionBlend * 1.0 );
+}
+
+float TessLevel()
+{
+	vec3	n01 = abs( Input[0].vNormal - Input[1].vNormal );
+	vec3	n02 = abs( Input[0].vNormal - Input[2].vNormal );
+	return clamp( ( n01.x + n01.y + n01.z + n02.x + n02.y + n02.z ) / 6 * unMaxTessLevel, 1.0, unMaxTessLevel );
 }
 
 void main()
@@ -108,14 +116,15 @@ void main()
 	if ( I == 0 )
 	{
 		bool	in_screen = any( bvec3( Input[0].bInScreen, Input[1].bInScreen, Input[2].bInScreen ) );
-		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 0.0;
-		float	scr_x = max( Input[0].vScrCoords.x, max( Input[1].vScrCoords.x, Input[2].vScrCoords.x ) );
-		float	tesslevel = unMaxTessLevel;//(scr_x > 0.0 ? unMaxTessLevel : 1.0) * k;
+		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 1.0;
+		//float	scr_x = Max3( Input[0].vScrCoords.x, Input[1].vScrCoords.x, Input[2].vScrCoords.x );
+		//float	tesslevel = (scr_x > 0.0 ? unMaxTessLevel : 1.0) * k;
+		float	tesslevel = unMaxTessLevel * k;
 		
 		gl_TessLevelOuter[0] = tesslevel;
 		gl_TessLevelOuter[1] = tesslevel;
 		gl_TessLevelOuter[2] = tesslevel;
-		gl_TessLevelInner[0] = tesslevel;
+		gl_TessLevelInner[0] = TessLevel() * k;
 	}
 	
 	vec3	Pi	= gl_in[0].gl_Position.xyz;
@@ -140,7 +149,7 @@ void main()
 layout(triangles, equal_spacing, ccw) in;
 
 uniform mat4		unMVPMatrix;
-uniform float		unPositionBlend;
+//uniform float		unPositionBlend;
 
 struct PhongPatch
 {
@@ -190,13 +199,11 @@ void main()
 					  tc1[1] * tc1[2] * termJK +
 					  tc1[2] * tc1[0] * termIK;
 					  
-	bool	is_edge		= (any( equal( gl_TessCoord, vec3(0.0) ) ) ||
-						   any( equal( gl_TessCoord, vec3(1.0) ) ));
-	float	blend		= is_edge ? 0.0 : unPositionBlend;
+	bool	is_edge		= any( equal( gl_TessCoord, vec3(0.0) ) );
+	float	blend		= is_edge ? 0.0 : 1.0;//unPositionBlend;
 	vec3	blend_pos	= (1.0-blend) * ln_pos + blend * ph_pos;
 	gl_Position			= unMVPMatrix * vec4( blend_pos, 1.0 );
 
-	
 	Output.vNormal		= normalize( Interpolate( Input, .vNormal ) );
 	Output.vTexcoord	= Interpolate( Input, .vTexcoord );
 	Output.fLevel		= gl_TessLevelOuter[2] * gl_TessCoord.x +

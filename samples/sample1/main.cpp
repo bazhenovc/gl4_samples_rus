@@ -177,7 +177,7 @@ void display()
 	
 	cam.move(	(input.isKey('w') - input.isKey('s')) * time_delta,
 				(input.isKey('d') - input.isKey('a')) * time_delta,
-				(input.isSpecKey(0x72) - input.isKey(' ')) * time_delta );
+				(input.isKey('q') - input.isKey('e')) * time_delta );
 
 	program->getStates().mvp	 = cam.toMatrix();
 
@@ -214,7 +214,7 @@ void timerFunc()
 		updateQuery = true;
 	}
 
-	sprintf( buf, "Sample1, part%i  Fps:%i, vertices: %i / %i", currPart+1, sys.getFPS(),
+	sprintf( buf, "Sample1, part%i, mode%i,  Fps:%i, vertices: %i / %i", currPart+1, modeIndex+1, sys.getFPS(),
 			 gridMesh->getIndexBuffer()->getSize(), vertices );
 	glutSetWindowTitle( buf );
 }

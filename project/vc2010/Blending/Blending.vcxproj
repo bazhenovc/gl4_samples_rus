@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\samples\sample1\main.cpp" />
+    <ClCompile Include="..\..\..\samples\blending\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\samples\sample1\modes.h" />
-    <ClInclude Include="..\..\..\samples\sample1\program.h" />
+    <ClInclude Include="..\..\..\samples\blending\modes.h" />
+    <ClInclude Include="..\..\..\samples\blending\program.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4A0390E2-29DE-4346-947F-209FB15328D5}</ProjectGuid>
-    <RootNamespace>Sample1</RootNamespace>
+    <ProjectGuid>{A0B0C79D-8798-4F82-B8E2-2B0BA16B076B}</ProjectGuid>
+    <RootNamespace>Blending</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -46,6 +46,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>../../../bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../../../bin/</OutDir>
@@ -56,11 +57,13 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../contrib;../../../code</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../../bin;../../../lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glew32.lib;framework_d.lib;dds_d.lib;assimp.lib;DevIL.lib;ILU.lib;ILUT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>NotSet</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

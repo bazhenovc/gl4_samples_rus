@@ -111,9 +111,9 @@ public:
 		program->bind( shader );
 
 		glDisable(GL_DEPTH_TEST);
-		_colorTarget->bind(  TEX_DIFFUSE );
-		_normalTarget->bind( TEX_NORMAL );
-		_depthTarget->bind(  TEX_DEPTH );
+		_colorTarget->bind(  TEX_DIFFUSE );		glBindSampler( TEX_DIFFUSE, 0 );
+		_normalTarget->bind( TEX_NORMAL );		glBindSampler( TEX_NORMAL, 0 );
+		_depthTarget->bind(  TEX_DEPTH );		glBindSampler( TEX_DEPTH, 0 );
 
 		_fullScreenQuad->draw();
 
@@ -388,11 +388,13 @@ private:
 	};
 	
 	Shader	*	_shaders[2];
+	MultiMesh *	_scene;
 	Model		_animModel;
 	float		_fPositionBlend;
 
 public:
-	Part3(): _fPositionBlend(1.f)
+	Part3():
+		_fPositionBlend(1.f), _scene(NULL)
 	{
 		memset( _shaders, 0, sizeof(_shaders) );
 	}
@@ -417,6 +419,12 @@ public:
 
 		_animModel.mesh = new SceletalMesh();
 		
+		
+		if ( !_scene ) {
+			_scene = new MultiMesh();
+			_scene->load( "meshes/SMUT.3ds", "SMUT_textures/" );
+		}
+
 #if 0
 		_animModel.mesh->loadMD5Mesh( "pinky/pinky.md5mesh" );
 		_animModel.mesh->loadMD5Anim( "pinky/pinky_idle1.md5anim" );
@@ -424,7 +432,7 @@ public:
 		_animModel.mesh->loadMD5Anim( "pinky/pinky_attack.md5anim" );
 #endif
 
-#if 0
+#if 1
 		_animModel.mesh->loadMD5Mesh( "qshambler/qshambler.md5mesh" );
 		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_idle02.md5anim" );
 		_animModel.mesh->loadMD5Anim( "qshambler/qshambler_walk.md5anim" );
@@ -439,7 +447,7 @@ public:
 		_animModel.mesh->setMaterial( 1u, mtr );
 #endif
 
-#if 1
+#if 0
 		_animModel.mesh->loadMD5Mesh( "Boblamp/boblampclean.md5mesh" );
 		_animModel.mesh->loadMD5Anim( "Boblamp/boblampclean.md5anim" );
 
@@ -491,6 +499,10 @@ public:
 
 	void draw(int i)
 	{
+		static const glm::quat	scene_rotation = glm::rotate( glm::quat(), 90.f, glm::vec3(1.f, 0.f, 0.f) );
+		static const glm::quat	mesh_rotation  = glm::rotate( glm::quat(), 90.f, glm::vec3(0.f, 0.f, 1.f) ) *
+												 glm::rotate( glm::quat(), 90.f, glm::vec3(0.f, 1.f, 0.f) );
+
 		// u
 		if ( input.isKeyClick('u') )	_animModel.paused = !_animModel.paused;
 
@@ -502,17 +514,20 @@ public:
 		if ( !_animModel.paused )
 			_animModel.mesh->update( sys.getTimeDelta() * 0.0005f );	// x2 slow
 
-		program->getStates().mvp = cam.buildMVPMatrix( _animModel.pos );	// TODO: rotation, scale
 
 		Shader *	shader = _shaders[ i % count_of(_shaders) ];
 
 		program->bind( shader );
 		shader->setUniformFloat( "unPositionBlend", _fPositionBlend );
 	
-		glEnable( GL_CULL_FACE );
+		//glEnable( GL_CULL_FACE );
 		glPolygonMode( GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL );
-
+		
+		shader->setUniformMatrix( "unMVPMatrix", cam.buildMVPMatrix( _animModel.pos, mesh_rotation, 0.1f ) );
 		_animModel.mesh->draw( shader, true );
+		
+		shader->setUniformMatrix( "unMVPMatrix", cam.buildMVPMatrix( glm::vec3(0.f), scene_rotation, 10.f ) );
+		_scene->draw( shader, true );
 		
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );

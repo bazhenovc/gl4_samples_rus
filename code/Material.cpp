@@ -80,9 +80,9 @@ void RenderState::apply()
 	glPolygonMode( GL_FRONT_AND_BACK, polygonMode );
 	glDepthRangef( depthRange.x, depthRange.y );
 
-	depthClamp ?		glEnable(GL_DEPTH_CLAMP) : glDisable(GL_DEPTH_CLAMP);
-	dither ?			glEnable(GL_DITHER) : glDisable(GL_DITHER);
-	cubeMapSeamless ?	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS) : glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	depthClamp ?		glEnable(GL_DEPTH_CLAMP)				: glDisable(GL_DEPTH_CLAMP);
+	dither ?			glEnable(GL_DITHER)						: glDisable(GL_DITHER);
+	cubeMapSeamless ?	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS)	: glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 
@@ -120,7 +120,8 @@ public:
 
 		tex = new Texture(type);
 
-		if ( tex->loadDDS( filename ) ) {
+		//if ( tex->loadDDS( filename ) ) {
+		if ( tex->loadImage( filename ) ) {
 			_textures.insert( value_t( name, tex ) );
 			return true;
 		}
@@ -204,6 +205,7 @@ void Material::apply(Shader *shader, GLint uboBindingIndex)
 			glBindBuffer( GL_UNIFORM_BUFFER, _ubo );
 			glBufferData( GL_UNIFORM_BUFFER, _uboSize, &_uboData[0], GL_STREAM_DRAW );
 			glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+			_uboChanged = false;
 		}
 
 		shader->bindUB( _uboName.c_str(), uboBindingIndex, _ubo );

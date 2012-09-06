@@ -17,12 +17,10 @@ public:
 	struct States
 	{
 		glm::mat4	mvp;
-		float		gridScale;
 		float		maxTessLevel;
-		float		heightScale;
 		float		detailLevel;
 
-		States(): gridScale(10000.f), maxTessLevel(12.f), heightScale(-1000.f), detailLevel(20.f) {}
+		States(): maxTessLevel(12.f), detailLevel(20.f) {}
 	};
 
 private:
@@ -59,9 +57,8 @@ void Program::setUniforms(Shader *shader)
 	if ( _states.detailLevel < 0.f )	_states.detailLevel = 0.f;
 
 	shader->setUniformMatrix( "unMVPMatrix",		 _states.mvp );
-	shader->setUniformFloat( "unGridScale",		 _states.gridScale );
+	shader->setUniformVector( "unViewport",		glm::vec2( sys.getWndSize() ) );
 	shader->setUniformFloat( "unMaxTessLevel",	 _states.maxTessLevel );
-	shader->setUniformFloat( "unHeightScale",	-_states.heightScale );
 	shader->setUniformFloat( "unDetailLevel",	 _states.detailLevel );
 }
 
@@ -70,10 +67,7 @@ bool Program::load(Shader *&shader, const char *fileName) const
 	if ( !shader )
 		shader = new Shader();
 
-	if ( !shader->loadShaders( fileName ) )
-		return false;
-
-	return true;
+	return shader->loadShaders( fileName );
 }
 
 void Program::bind(Shader *shader)

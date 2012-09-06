@@ -12,11 +12,14 @@ layout(location = 1)	in vec2	inTexcoord;
 layout(location = 2)	in vec3	inNormal;
 
 uniform mat4	unMVPMatrix;
+uniform float	unDetailLevel;
+uniform float	unMaxTessLevel;
 
 out	TVertData {
 	vec3	vNormal;
 	vec2	vScrCoords;
 	vec2	vTexcoord;
+	float	fLevel;
 	bool	bInScreen;
 } Output;
 
@@ -27,14 +30,20 @@ bool InScreen(in vec2 pos)
 	return all( lessThan( abs(pos), vec2(size) ) );
 }
 
+float Level(float dist)
+{
+	return clamp( unDetailLevel*100.0/dist - 2.0, 1.0, unMaxTessLevel );
+}
+
 void main()
 {
 	Output.vTexcoord	= inTexcoord;
-	gl_Position			= vec4( inPosition, 1.0 ).yzxw;
+	gl_Position			= vec4( inPosition, 1.0 );
 	vec4	pos			= unMVPMatrix * gl_Position;
-	Output.vNormal		= inNormal.yzx * -1.0;
+	Output.vNormal		= inNormal;
 	Output.vScrCoords	= pos.xy / pos.w;
 	Output.bInScreen	= InScreen( Output.vScrCoords );
+	Output.fLevel		= Level( pos.z );
 }
 
 
@@ -47,6 +56,7 @@ void main()
 
 layout(vertices = 3) out;
 
+uniform float	unDetailLevel;
 uniform float	unMaxTessLevel;
 
 struct PnPatch
@@ -67,6 +77,7 @@ in	TVertData {
 	vec3	vNormal;
 	vec2	vScrCoords;
 	vec2	vTexcoord;
+	float	fLevel;
 	bool	bInScreen;
 } Input[];
 
@@ -118,19 +129,33 @@ float vij(int i, int j)
 				 dot( Pj_minus_Pi, Pj_minus_Pi );
 }
 
+float TessLevel()
+{
+	vec3	n01 = abs( Input[0].vNormal - Input[1].vNormal );
+	vec3	n02 = abs( Input[0].vNormal - Input[2].vNormal );
+	return clamp( ( n01.x + n01.y + n01.z + n02.x + n02.y + n02.z ) / 6, 0.1, 1.0 );
+}
+
+float ScreenSpaceLevel(in vec2 p0, in vec2 p1)
+{
+	return clamp( distance( p0, p1 ) * unDetailLevel * 8.0, 0.1, unMaxTessLevel );
+}
+
 void main()
 {
 	if ( I == 0 )
 	{
 		bool	in_screen = any( bvec3( Input[0].bInScreen, Input[1].bInScreen, Input[2].bInScreen ) );
-		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 0.0;
-		float	scr_x = max( Input[0].vScrCoords.x, max( Input[1].vScrCoords.x, Input[2].vScrCoords.x ) );
-		float	tesslevel = unMaxTessLevel;//(scr_x > 0.0 ? unMaxTessLevel : 1.0) * k;
+		float	k = ( in_screen || TriangleInScreen() ) ? 1.0 : 1.0;
+		//float	scr_x = Max3( Input[0].vScrCoords.x, Input[1].vScrCoords.x, Input[2].vScrCoords.x );
+		//float	tesslevel = (scr_x > 0.0 ? unMaxTessLevel : 1.0) * k;
+		float	tesslevel = unMaxTessLevel * k;
 		
-		gl_TessLevelOuter[2] = tesslevel;
-		gl_TessLevelOuter[0] = tesslevel;
-		gl_TessLevelOuter[1] = tesslevel;
-		gl_TessLevelInner[0] = tesslevel;
+		gl_TessLevelOuter[2] = Level( Input[1], Input[2] ) * k;
+		gl_TessLevelOuter[0] = Level( Input[0], Input[2] ) * k;
+		gl_TessLevelOuter[1] = Level( Input[0], Input[1] ) * k;
+		gl_TessLevelInner[0] = max( max( gl_TessLevelOuter[0], gl_TessLevelOuter[1] ),
+									gl_TessLevelOuter[2] ) * k * TessLevel();
 	}
 	
 	gl_out[I].gl_Position	= gl_in[I].gl_Position;
@@ -237,13 +262,12 @@ void main()
 
 	Output.vTexcoord	= Interpolate( Input, .vTexcoord );
 	
-	bool	is_edge		= (any( equal( gl_TessCoord, vec3(0.0) ) ) ||
-						   any( equal( gl_TessCoord, vec3(1.0) ) ));
+	bool	is_edge		= any( equal( uvw, vec3(0.0) ) );
 	float	blend		= is_edge ? 0.0 : unPositionBlend;
 
 	// normal
 	vec3	ln_norm		= normalize( Interpolate( Input, .vNormal ) );
-	/*vec3	pn_norm		= normalize( 
+	vec3	pn_norm		= normalize( 
 						  n200 * uvwSquared[2] +
 						  n020 * uvwSquared[0] +
 						  n002 * uvwSquared[1] +
@@ -251,7 +275,7 @@ void main()
 						  n011 * uvw[0] * uvw[1] +
 						  n101 * uvw[2] * uvw[1] );
 	Output.vNormal		= (1.0-blend) * ln_norm +
-						  blend * pn_norm;*/
+						  blend * pn_norm;
 	Output.vNormal		= ln_norm;
 
 	// position

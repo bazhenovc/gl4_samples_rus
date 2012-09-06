@@ -266,7 +266,7 @@ bool Shader::setTexture(const char* name, GLuint texUnit)
 		return false;
 	}
 	glUniform1i(loc, texUnit);
-	return false;
+	return true;
 }
 
 bool Shader::setTexture(int loc, GLuint texUnit)

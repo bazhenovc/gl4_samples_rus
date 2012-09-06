@@ -7,68 +7,32 @@ class View;
 class Program;
 
 Mode *		currentMode		= NULL;
-Mesh *		gridMesh		= NULL;
 Mesh *		fullScreenQuad	= NULL;
-Texture *	diffuseMap		= NULL,
-		*	diffuseMap2		= NULL,
-		*	heightMap		= NULL,
-		*	normalMap		= NULL;
+MultiMesh *	scene			= NULL;
 Program *	program			= NULL;
-Query *		primitivesQuery	= NULL;
 System		sys;
 Input &		input			= *sys.getInput();
-int			gridSize		= 127;
 int			modeIndex		= 0;
 int			currPart		= 0;
 FPSCamera	cam;
 bool		wireframe		= false;
-bool		polygonOffset	= false;
-bool		updateQuery		= true;
 float		camSpeed		= 0.025f;
-float		polygonsOffset	= -200.f;//0.001f;
 
 #include "program.h"
 #include "modes.h"
 
-Mode *		allModes[] = { new Part0(), new Part1(), new Part2(), new Part3(), new Part4() };
+Mode *		allModes[] = { new Part0() };
 
 
 void init()
 {
-	sys.setCurrentDirectory( "samples/lineardepth/media" );
-
-	gridMesh		= new Mesh();
+	sys.setCurrentDirectory( "samples/blending/media" );
+	
+	scene = new MultiMesh();
+	scene->load( "meshes/SMUT.3ds", "textures/" );
 
 	fullScreenQuad	= new Mesh();
 	fullScreenQuad->makeQuad();
-
-	diffuseMap		= new Texture( GL_TEXTURE_2D );
-	diffuseMap2		= new Texture(GL_TEXTURE_2D);
-	heightMap		= new Texture( GL_TEXTURE_2D );
-	normalMap		= new Texture( GL_TEXTURE_2D );
-
-	diffuseMap->loadDDS( "textures/grass.dds" );
-	heightMap->loadDDS(  "textures/height.dds" );
-	normalMap->loadDDS(  "textures/normal.dds" );
-	diffuseMap2->loadDDS( "textures/dark_grass.dds" );
-
-	diffuseMap->bind();
-	diffuseMap->setWrap( GL_REPEAT, GL_REPEAT );
-	diffuseMap->setAnisotropy( 16 );
-	diffuseMap->unbind();
-
-	diffuseMap2->bind();
-	diffuseMap2->setWrap( GL_REPEAT, GL_REPEAT );
-	diffuseMap2->setAnisotropy( 16 );
-	diffuseMap2->unbind();
-
-	heightMap->bind();
-	heightMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-	heightMap->unbind();
-
-	normalMap->bind();
-	normalMap->setWrap( GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE );
-	normalMap->unbind();
 
 	program			= new Program();
 
@@ -76,21 +40,17 @@ void init()
 	
 	currentMode->load();
 
-	primitivesQuery	= new Query();
 
-	glPolygonOffset( 1.f, 1024.f );
-	//glEnable( GL_DEPTH_CLAMP );
+	glEnable( GL_DEPTH_CLAMP );
 	glEnable( GL_DEPTH_TEST );
-	glCullFace( GL_FRONT );
+	//glCullFace( GL_FRONT );
+	glDisable( GL_CULL_FACE );
 
 	sys.swapInterval( 0 );
-	
-	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y),
-			  1.f, 3000.0f,
-			  glm::vec3(	-program->getStates().gridScale * 0.5f,
-							 program->getStates().heightScale * 0.1f,
-							-program->getStates().gridScale * 0.5f )
-			 );
+	cam.init( 60.0f, float(sys.getWndSize().x) / float(sys.getWndSize().y), 0.1f, 500.0f );
+
+	glClearColor( 0.f, 0.3f, 1.f, 1.f );
+	glClearDepthf( 1.f );
 }
 
 void shutdown()
@@ -101,12 +61,8 @@ void shutdown()
 		allModes[i] = NULL;
 	}
 
-	delete gridMesh;
 	delete fullScreenQuad;
-	delete diffuseMap;
-	delete heightMap;
-	delete program;
-	delete primitivesQuery;
+	delete scene;
 }
 
 void loadMode(int i)
@@ -135,31 +91,26 @@ void display()
 	if ( input.isKeyClick(',') )	program->getStates().detailLevel--;
 	if ( input.isKeyClick('.') )	program->getStates().detailLevel++;
 
-	// [ ]
-	if ( input.isKeyClick('[') )	program->getStates().heightScale += 0.2f;
-	if ( input.isKeyClick(']') )	program->getStates().heightScale -= 0.2f;
-
-	// left, right
-	if ( input.isSpecKeyClick(GLUT_KEY_LEFT) )	polygonsOffset -= 10.0f;
-	if ( input.isSpecKeyClick(GLUT_KEY_RIGHT))	polygonsOffset += 10.0f;
-
 	// up, down
 	if ( input.isSpecKeyClick(GLUT_KEY_UP) )	camSpeed += 0.01f;
 	if ( input.isSpecKeyClick(GLUT_KEY_DOWN) )	camSpeed -= 0.01f;
 
 	// ( )
 	if ( input.isKeyClick('9') && modeIndex > 0 )	modeIndex--;
-	if ( input.isKeyClick('0') && modeIndex < 6 )	modeIndex++;
+	if ( input.isKeyClick('0') && modeIndex < 7 )	modeIndex++;
 
 	if ( input.isKeyClick('r') )	{ currentMode->unload();  currentMode->load(); }			// reload
 	if ( input.isKeyClick('p') )	wireframe = !wireframe;
-	if ( input.isKeyClick('o') )	polygonOffset = !polygonOffset;
 	
 	// 1..4
 	if ( input.isKey('1') )			modeIndex = 0;
 	if ( input.isKey('2') )			modeIndex = 1;
 	if ( input.isKey('3') )			modeIndex = 2;
 	if ( input.isKey('4') )			modeIndex = 3;
+	if ( input.isKey('5') )			modeIndex = 4;
+	if ( input.isKey('6') )			modeIndex = 5;
+	if ( input.isKey('7') )			modeIndex = 6;
+	if ( input.isKey('8') )			modeIndex = 7;
 
 	// F1..F7
 	if ( input.isSpecKeyClick(GLUT_KEY_F1) )	loadMode( 0 );
@@ -178,10 +129,11 @@ void display()
 				(input.isKey('d') - input.isKey('a')) * time_delta,
 				(input.isKey('q') - input.isKey('e')) * time_delta );
 
-	program->getStates().mvp		 = cam.toMatrix();
+	program->getStates().mvp		 = cam.toMatrixScale( 10.f );
 
 	currentMode->draw( modeIndex );
 }
+
 
 void reshape(int w, int h)
 {
@@ -190,25 +142,19 @@ void reshape(int w, int h)
 	currentMode->load();
 }
 
+
 void timerFunc()
 {
-	static unsigned int		vertices = 0;
-	static char				buf[512];
-
-	if ( primitivesQuery->isResultReady() ) {
-		vertices = primitivesQuery->getResult();
-		updateQuery = true;
-	}
-
-	sprintf( buf, "LinearDepth, part%i, mode:%i,  Fps:%i, vertices: %i / %i", currPart+1, modeIndex+1,
-			 sys.getFPS(), gridMesh->getIndexBuffer()->getSize(), vertices );
+	static char	buf[512];
+	sprintf( buf, "Blending, part%i  Fps:%i", currPart+1, sys.getFPS() );
 	glutSetWindowTitle( buf );
 }
+
 
 int main(int argc, char** argv)
 {
 	sys.setOnTimer( timerFunc );
-	sys.initGLUT( argc, argv, display, init, "LinearDepth", 1024, 768 );
+	sys.initGLUT( argc, argv, display, init, "Blending", 1024, 768 );
 	shutdown();
 	return 0;
 }

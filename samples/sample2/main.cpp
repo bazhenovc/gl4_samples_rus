@@ -158,7 +158,7 @@ void timerFunc()
 		updateQuery = true;
 	}
 
-	sprintf( buf, "Sample1, part%i, mode:%i  Fps:%i, vertices: %i", currPart+1, modeIndex+1, sys.getFPS(), vertices );
+	sprintf( buf, "Sample2, part%i, mode:%i  Fps:%i, vertices: %i", currPart+1, modeIndex+1, sys.getFPS(), vertices );
 	glutSetWindowTitle( buf );
 }
 

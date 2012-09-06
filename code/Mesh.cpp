@@ -6,9 +6,16 @@
 #include <malloc.h>
 #include <stdint.h>
 #include <vector>
+
 #include <md5/md5load.h>
 #include <md5/md5load.cpp>
 #include <md5/md5anim.cpp>
+
+#include <assimp/Importer.hpp>
+#include <assimp/PostProcess.h>
+#include <assimp/Scene.h>
+#include <assimp/DefaultLogger.hpp>
+#include <assimp/LogStream.hpp>
 
 #define logPrint printf
 
@@ -271,6 +278,342 @@ void Mesh::createGrid(unsigned int sideSize, float quadSize, unsigned int patchS
 }
 
 
+
+static void AssimpInit()
+{
+	static bool	isAssimpInit = false;
+
+	if ( isAssimpInit )
+		return;
+
+	isAssimpInit = true;
+
+	// Create Logger
+	Assimp::Logger::LogSeverity severity = Assimp::Logger::VERBOSE;
+	Assimp::DefaultLogger::create("",severity, aiDefaultLogStream_STDOUT);
+	Assimp::DefaultLogger::create("assimp_log.txt",severity, aiDefaultLogStream_FILE);
+	Assimp::DefaultLogger::get()->info("this is my info-call");
+}
+
+static Assimp::Importer		assimpImporter;
+
+
+
+MultiMesh::MultiMesh()
+{
+	indexBuffer		= new HardwareBuffer(BT_INDEX);
+	vertexBuffer	= new HardwareBuffer(BT_VERTEX);
+	
+	AssimpInit();
+}
+
+
+MultiMesh::~MultiMesh()
+{
+	for (size_t i = 0; i < submeshes.size(); ++i) {
+		glDeleteVertexArrays( 1, &submeshes[i].vao );
+		delete submeshes[i].mtr;
+	}
+	
+	delete vertexBuffer;
+	delete indexBuffer;
+}
+
+
+void MultiMesh::_addSubMesh(void *pscene, unsigned int meshID, std::vector<float> &vertices, std::vector<unsigned int> &indices, const char *texturesPath, const glm::mat4 &m)
+{
+	const aiScene *	scene = (const aiScene *)pscene;
+	const aiMesh *	mesh  = scene->mMeshes[meshID];
+	SubMesh			sm;
+
+	sm.count		 = 0;
+	sm.mtr			 = NULL;
+	sm.name			 = mesh->mName.C_Str();
+	sm.offset		 = indices.size();
+	sm.indexType	 = GL_UNSIGNED_INT;
+	sm.primitiveType = mesh->mPrimitiveTypes;
+
+	_createMaterial( scene->mMaterials[mesh->mMaterialIndex], sm.mtr, texturesPath );
+
+	const bool	has_positions	= mesh->HasPositions();
+	const bool	has_texcoords	= mesh->HasTextureCoords(0);
+	const bool	has_normals		= mesh->HasNormals();
+	const bool	has_tan_binorm	= mesh->HasTangentsAndBitangents();
+	const int	stride			= sizeof(float) * (has_positions * 3 + has_texcoords * 2 +
+								  has_normals * 3 + has_tan_binorm * 6);
+	size_t		vert_offset		= vertices.size();
+
+	vertices.reserve( vertices.size() + mesh->mNumVertices * stride );
+	indices.reserve(  indices.size()  + mesh->mNumFaces * 3 );
+
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		const aiFace *	face = &mesh->mFaces[i];
+
+		for (unsigned int j = 0; j < face->mNumIndices; ++j)
+		{
+			unsigned int	idx = face->mIndices[j];
+			
+			indices.push_back( idx );
+			sm.count++;
+		}
+	}
+			
+			
+	for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
+	{
+		if ( has_positions ) {
+			glm::vec4	v = m * glm::vec4( mesh->mVertices[i].x,  mesh->mVertices[i].y, mesh->mVertices[i].z, 1.f );
+			vertices.push_back( v.x );
+			vertices.push_back( v.y );
+			vertices.push_back( v.z );
+		}
+
+		if ( has_texcoords ) {
+			vertices.push_back( mesh->mTextureCoords[0][i].x );
+			vertices.push_back( 1.f - mesh->mTextureCoords[0][i].y );
+		}
+
+		if ( has_normals ) {
+			glm::vec3	n = glm::inverse( glm::mat3( m ) ) *
+							glm::vec3( mesh->mNormals[i].x,  mesh->mNormals[i].y, mesh->mNormals[i].z );
+			vertices.push_back( n.x );
+			vertices.push_back( n.y );
+			vertices.push_back( n.z );
+		}
+
+		if ( has_tan_binorm ) {
+			vertices.push_back( mesh->mTangents[i].x );
+			vertices.push_back( mesh->mTangents[i].y );
+			vertices.push_back( mesh->mTangents[i].z );
+			vertices.push_back( mesh->mBitangents[i].x );
+			vertices.push_back( mesh->mBitangents[i].y );
+			vertices.push_back( mesh->mBitangents[i].z );
+		}
+	}
+
+	glGenVertexArrays( 1, &sm.vao );
+	glBindVertexArray( sm.vao );
+	vertexBuffer->bind();
+
+	// 0 - position
+	if ( has_positions ) {
+		glEnableVertexAttribArray( 0 );
+		glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, stride, (const void *)(sizeof(float)*vert_offset) );
+		vert_offset += 3;
+	}
+
+	// 1 - texcoord
+	if ( has_texcoords ) {
+		glEnableVertexAttribArray( 1 );
+		glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, stride, (const void *)(sizeof(float)*vert_offset) );
+		vert_offset += 2;
+	}
+
+	// 2 - normal
+	if ( has_normals ) {
+		glEnableVertexAttribArray( 2 );
+		glVertexAttribPointer( 2, 3, GL_FLOAT, GL_FALSE, stride, (const void *)(sizeof(float)*vert_offset) );
+		vert_offset += 3;
+	}
+		
+	// 3,4 - tangent, binormal
+	if ( has_tan_binorm ) {
+		glEnableVertexAttribArray( 3 );
+		glVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, stride, (const void *)(sizeof(float)*vert_offset) );
+		vert_offset += 3;
+		glEnableVertexAttribArray( 4 );
+		glVertexAttribPointer( 4, 3, GL_FLOAT, GL_FALSE, stride, (const void *)(sizeof(float)*vert_offset) );
+		vert_offset += 3;
+	}
+
+	glBindVertexArray( 0 );
+
+	submeshes.push_back( sm );
+}
+
+
+void MultiMesh::_createMaterial(void *pmaterial, Material *&mtr, const char *texturesPath)
+{
+	const aiMaterial *	material = (const aiMaterial *)pmaterial;
+
+	if ( mtr == NULL )
+		mtr = new Material();
+	
+	mtr->createUB( "Material", sizeof(MaterialParams), 0 );
+
+	MaterialParams &	params = mtr->getData<MaterialParams>();
+
+	aiGetMaterialColor( material, AI_MATKEY_COLOR_DIFFUSE,	(aiColor4D *)&params.diffuse );
+	aiGetMaterialColor( material, AI_MATKEY_COLOR_SPECULAR,	(aiColor4D *)&params.specular );
+	aiGetMaterialColor( material, AI_MATKEY_COLOR_AMBIENT,	(aiColor4D *)&params.ambient );
+	aiGetMaterialColor( material, AI_MATKEY_COLOR_EMISSIVE,	(aiColor4D *)&params.emission );
+	
+	unsigned int	max = 1;
+	aiGetMaterialFloatArray( material, AI_MATKEY_SHININESS, &params.shininess, &max );
+	max = 1;
+	aiGetMaterialFloatArray( material, AI_MATKEY_SHININESS_STRENGTH, &params.strength, &max );
+	
+	std::string		texPath;
+
+	if ( texturesPath )
+	{
+		texPath = texturesPath;
+
+		if ( texPath.back() != '\\' && texPath.back() != '/' ) {
+			texPath += '/';
+		}
+	}
+	_loadTexture( (void*)material, mtr, 0, texPath );	// diffuse
+	_loadTexture( (void*)material, mtr, 1, texPath );	// normal
+	_loadTexture( (void*)material, mtr, 2, texPath );	// height
+}
+
+static GLenum SwitchWrap(aiTextureMapMode mode)
+{
+	switch ( mode )
+	{
+		case aiTextureMapMode_Wrap :	return GL_REPEAT;
+		case aiTextureMapMode_Clamp :	return GL_CLAMP_TO_EDGE;
+		case aiTextureMapMode_Mirror :	return GL_MIRRORED_REPEAT;
+		default :						return GL_REPEAT;
+	}
+}
+
+
+bool MultiMesh::_loadTexture(void *pmaterial, Material *mtr, int index, const std::string &texturesPath)
+{
+	struct TexType {
+		const char *	uniform;
+		aiTextureType	type;
+	};
+	static const TexType	textureTypes[] = {	{ "unDiffuseMap", aiTextureType_DIFFUSE },
+												{ "unNormalMap",  aiTextureType_NORMALS },
+												{ "unHeightMap",  aiTextureType_HEIGHT  } };
+
+	Sampler				sampler;
+	aiString			texName;
+	aiTextureMapMode	mapMode[3]	= { aiTextureMapMode(-1), aiTextureMapMode(-1), aiTextureMapMode(-1) };
+	const aiMaterial *	material	= (const aiMaterial *)pmaterial;
+
+	if ( material->GetTexture( textureTypes[index].type, 0, &texName, NULL, NULL, NULL, NULL, mapMode ) == AI_SUCCESS )
+	{
+		sampler.wrapS		= SwitchWrap( mapMode[0] );
+		sampler.wrapT		= SwitchWrap( mapMode[1] );
+		sampler.wrapR		= SwitchWrap( mapMode[2] );
+		sampler.anisotrophy	= 16;
+		sampler.filterMag	= GL_LINEAR;
+		sampler.filterMin	= GL_LINEAR_MIPMAP_LINEAR;
+
+		return mtr->addTexture( (texturesPath + texName.C_Str()).c_str(), textureTypes[index].uniform, index, GL_TEXTURE_2D, sampler );
+	}
+	return false;
+}
+
+
+void MultiMesh::_recursiveLoad(void *pscene, void *pnode, std::vector<float> &vertices, std::vector<unsigned int> &indices, const char *texturesPath, const glm::mat4 &m)
+{
+	const aiScene *	scne = (const aiScene *)pscene;
+	const aiNode *	node = (const aiNode *)pnode;
+	const glm::mat4	tr	 = m * glm::transpose(*(glm::mat4 *)&node->mTransformation);
+
+	for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+		_addSubMesh( pscene, node->mMeshes[i], vertices, indices, texturesPath, tr );
+	}
+
+	for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+		_recursiveLoad( pscene, (void *)node->mChildren[i], vertices, indices, texturesPath, tr );
+	}
+}
+
+
+bool MultiMesh::load(const char *filename, const char *texturesPath)
+{
+	const aiScene* scene = assimpImporter.ReadFile( filename, aiProcessPreset_TargetRealtime_Quality);
+
+	if ( !scene ) {
+		printf( "Failed to load mesh: %s\n", filename );
+		return false;
+	}
+
+	std::vector<float>			vertices;
+	std::vector<unsigned int>	indices;
+
+	/*for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+		_addSubMesh( (void *)scene, i, vertices, indices, texturesPath );
+	}*/
+	_recursiveLoad( (void*)scene, (void*)scene->mRootNode, vertices, indices, texturesPath, glm::mat4() );
+
+	indexBuffer->bind();
+	indexBuffer->copyData( &indices[0], indices.size(), sizeof(indices[0]), GL_STATIC_DRAW );
+	indexBuffer->unbind();
+
+	vertexBuffer->bind();
+	vertexBuffer->copyData( &vertices[0], vertices.size(), sizeof(vertices[0]), GL_STATIC_DRAW );
+	vertexBuffer->unbind();
+
+	return true;
+}
+	
+
+void MultiMesh::setMaterial(size_t submeshIndex, Material *mtr)
+{
+	if ( submeshIndex < submeshes.size() )
+	{
+		submeshes[ submeshIndex ].mtr = mtr;
+		return;
+	}
+	assert( false && "index is out of range" );
+}
+
+
+void MultiMesh::setMaterial(const char *submeshName, Material *mtr)
+{
+	std::string	str( submeshName );
+
+	for (size_t i = 0; i < submeshes.size(); ++i)
+	{
+		if ( str == submeshes[i].name ) {
+			submeshes[i].mtr = mtr;
+			return;
+		}
+	}
+	assert( false && "can't find submesh with name" );
+}
+	
+
+void MultiMesh::draw(bool asPatches)
+{
+	for (size_t i = 0; i < submeshes.size(); ++i)
+	{
+		glBindVertexArray( submeshes[i].vao );
+		indexBuffer->bind();
+
+		glDrawElements( asPatches ? GL_PATCHES : submeshes[i].primitiveType, submeshes[i].count,
+						submeshes[i].indexType, (const void **)(submeshes[i].offset * sizeof(int)) );
+		indexBuffer->unbind();
+	}
+	glBindVertexArray( 0 );
+}
+
+
+void MultiMesh::draw(Shader *shader, bool asPatches)
+{
+	for (size_t i = 0; i < submeshes.size(); ++i)
+	{
+		if ( submeshes[i].mtr )
+			submeshes[i].mtr->apply( shader );
+		
+		glBindVertexArray( submeshes[i].vao );
+		indexBuffer->bind();
+
+		glDrawElements( asPatches ? GL_PATCHES : submeshes[i].primitiveType, submeshes[i].count,
+						submeshes[i].indexType, (const void **)(submeshes[i].offset * sizeof(int)) );
+		indexBuffer->unbind();
+	}
+	glBindVertexArray( 0 );
+}
 
 
 

@@ -66,23 +66,10 @@ public:
 	void setRenderTargets(unsigned int flag);
 
 	/**
-		Create texture for attaching.
-	*/
-	Texture* createTexture(GLuint type, unsigned int width, unsigned int height,
-						   GLuint format = GL_RGBA,
-						   GLuint internalFormat = GL_RGBA,
-						   GLuint byteType = GL_UNSIGNED_BYTE);
-
-	/**
 		Attach a texture as a render target
 	*/
 	void attach(Texture* texture, GLuint attachment);
 	void attachLayer(Texture *texture, GLenum attachment, GLint layer);
-
-	/**
-		Create renderbuffer for attaching
-	*/
-	RenderBuffer* createRenderBuffer(GLuint type, unsigned int width, unsigned int height);
 
 	/**
 		Attach a renderbuffer as a render target

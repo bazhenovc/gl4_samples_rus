@@ -59,6 +59,64 @@ private:
 
 
 
+class MultiMesh
+{
+public:
+	struct MaterialParams
+	{
+		glm::vec4	diffuse,
+					specular,
+					ambient,
+					emission;
+		float		shininess,
+					strength;
+		int			_align[2];
+	};
+
+private:
+	struct SubMesh
+	{
+		GLuint		vao;
+		Material *	mtr;
+		std::string	name;
+		size_t		count;
+		size_t		offset;		// in index buffer
+		GLenum		indexType;
+		GLenum		primitiveType;
+
+		SubMesh(const char *n = ""):
+			name(n), mtr(0), count(0), offset(0), indexType(GL_UNSIGNED_SHORT),
+			primitiveType(GL_TRIANGLES), vao(0) {}
+	};
+
+	
+	std::vector< SubMesh >		submeshes;
+	HardwareBuffer	*			indexBuffer,
+					*			vertexBuffer;
+	
+	void _recursiveLoad(void *scene, void *node, std::vector<float> &vertices, std::vector<unsigned int> &indices, const char *texturesPath, const glm::mat4 &m);
+	void _addSubMesh(void *scene, unsigned int meshID, std::vector<float> &vertices, std::vector<unsigned int> &indices, const char *texturesPath, const glm::mat4 &m);
+	void _createMaterial(void *material, Material *&mtr, const char *texturesPath);
+	bool _loadTexture(void *material, Material *mtr, int index, const std::string &texturesPath);
+
+public:
+	MultiMesh();
+	~MultiMesh();
+
+	bool load(const char *filename, const char *texturesPath = 0);
+	
+	void setMaterial(size_t submeshIndex, Material *mtr);
+	void setMaterial(const char *submeshName, Material *mtr);
+	
+	void draw(bool asPatches = false);
+	void draw(Shader *shader, bool asPatches = false);
+	
+	size_t		getNumSubmeshes()		const	{ return submeshes.size(); }
+	Material *	getMaterial(size_t i)	const	{ return submeshes[i].mtr; }
+};
+
+
+
 class SceletalMesh
 {
 public:

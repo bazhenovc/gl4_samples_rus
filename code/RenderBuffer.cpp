@@ -4,12 +4,26 @@
 namespace framework
 {
 
-RenderBuffer::RenderBuffer(GLuint t, unsigned int w, unsigned int h)
-	: type(t), width(w), height(h)
+RenderBuffer::RenderBuffer()
+	: type(0), width(0), height(0)
 {
-	glGenRenderbuffers(1, &id);
+}
+
+void RenderBuffer::create(GLuint t, unsigned int w, unsigned int h, unsigned int samples)
+{
+	if ( !id )
+		glGenRenderbuffers(1, &id);
+	
+	type	= t;
+	width	= w;
+	height	= h;
 	glBindRenderbuffer(GL_RENDERBUFFER, id);
-	glRenderbufferStorage(GL_RENDERBUFFER, type, width, height);
+
+	if ( samples > 1 )
+		glRenderbufferStorage(GL_RENDERBUFFER, type, width, height);
+	else
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, type, width, height );
+	
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
